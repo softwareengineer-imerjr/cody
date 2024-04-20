@@ -4,6 +4,7 @@ import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../../sourcegraph-api/completions/types'
 import { getCompletionsModelConfig } from '../utils'
+import { getOllamaChatMessages } from './utils'
 
 /**
  * Calls the Ollama API for chat completions with history.
@@ -29,12 +30,7 @@ export function ollamaChatClient(
     // Construct the Ollama chat parameters from the default completion parameters.
     const ollamaChatParams = {
         model: config?.model || params.model.replace('ollama/', ''),
-        messages: params.messages.map(msg => {
-            return {
-                role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: msg.text?.toString() ?? '',
-            }
-        }),
+        messages: getOllamaChatMessages(params.messages),
         options: {
             temperature: params.temperature,
             top_k: params.topK,

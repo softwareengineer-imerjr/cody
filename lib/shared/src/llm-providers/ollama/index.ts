@@ -37,8 +37,11 @@ export interface OllamaChatParams {
     options?: OllamaGenerateParameters
 }
 
-interface OllamaChatMessage {
-    role: string
+export interface OllamaChatMessage {
+    /**
+     * The role of the message, either system, user or assistant
+     */
+    role: 'system' | 'user' | 'assistant'
     content: string
     images?: string[]
 }
