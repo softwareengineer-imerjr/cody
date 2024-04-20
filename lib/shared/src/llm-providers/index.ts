@@ -1,3 +1,5 @@
-import type { GeminiModelConfig } from './google'
-
-export type CompletionsModelConfig = GeminiModelConfig
+export interface CompletionsModelConfig {
+    model: string
+    key: string
+    endpoint?: string
+}

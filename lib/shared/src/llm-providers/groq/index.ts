@@ -65,9 +65,12 @@ export interface GroqCompletionsStreamResponse {
         }
     }[]
     done: boolean
-    usage?: GroqCompletionsResponseUsage
     id?: string
     created?: number
+    x_groq?: {
+        id: string
+        usage?: GroqCompletionsResponseUsage
+    }
 }
 
 interface GroqCompletionsError {
