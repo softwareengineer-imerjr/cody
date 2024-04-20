@@ -88,8 +88,7 @@ export function groqChatClient(
                         const data = line.slice(dataMarker.length)
                         try {
                             const parsedData = JSON.parse(data) as GroqCompletionsStreamResponse
-                            const delta = parsedData.choices?.[0]?.delta
-                            const message = delta?.content
+                            const message = parsedData.choices?.[0]?.delta?.content
 
                             if (message) {
                                 responseText += message
@@ -102,7 +101,7 @@ export function groqChatClient(
 
                             // Log the completion usage details when the completion is done.
                             if (parsedData.x_groq?.usage) {
-                                console.info('Gorq stream completed:', parsedData.x_groq.usage)
+                                console.info('Groq stream completed:', parsedData.x_groq.usage)
                             }
                         } catch (error) {
                             // Skip JSON parsing errors
