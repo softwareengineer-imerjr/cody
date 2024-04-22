@@ -1,5 +1,5 @@
-import { OLLAMA_DEFAULT_CONTEXT_WINDOW, type OllamaChatMessage } from '.'
-import { type Message, ModelProvider, ModelUsage, OLLAMA_DEFAULT_URL, logError } from '../..'
+import { OLLAMA_DEFAULT_CONTEXT_WINDOW } from '.'
+import { ModelProvider, ModelUsage, OLLAMA_DEFAULT_URL, logError } from '../..'
 import { CHAT_OUTPUT_TOKEN_BUDGET } from '../../token/constants'
 
 /**
@@ -27,18 +27,4 @@ export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
                 return []
             }
         )
-}
-
-/**
- * Converts an array of `Message` objects to an array of `OllamaChatMessage` objects,
- * which are suitable for sending to the Ollama API.
- *
- * @param messages - An array of `Message` objects to be converted.
- * @returns An array of `OllamaChatMessage` objects.
- */
-export function getOllamaChatMessages(messages: Message[]): OllamaChatMessage[] {
-    return messages.map(msg => ({
-        role: msg.speaker === 'human' ? 'user' : msg.speaker,
-        content: msg.text?.toString() ?? '',
-    }))
 }
