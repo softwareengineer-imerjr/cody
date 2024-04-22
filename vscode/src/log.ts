@@ -26,7 +26,9 @@ export const outputChannel: vscode.OutputChannel = vscode.window.createOutputCha
  *   logDebug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
  */
 export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
-    log('debug', filterLabel, text, ...args)
+    if (filterLabel.includes('Lsp')) {
+        log('debug', filterLabel, text, ...args)
+    }
 }
 
 /**

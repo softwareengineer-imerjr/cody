@@ -316,7 +316,7 @@ interface RequestCacheItem {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
 }
-class RequestCache {
+export class RequestCache {
     private cache = new LRUCache<string, RequestCacheItem>({
         max: 50,
     })

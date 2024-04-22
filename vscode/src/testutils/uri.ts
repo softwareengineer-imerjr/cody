@@ -57,6 +57,7 @@ export class Uri {
         } else {
             this.uri = URI.from(componentsOrUri)
         }
+        ;(this.uri as any)._fsPath = this.uri.path
     }
 
     public get scheme(): string {

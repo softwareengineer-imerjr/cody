@@ -451,7 +451,6 @@ class FireworksProvider extends Provider {
                         if (event === 'error') {
                             throw new TracedError(data, traceId)
                         }
-
                         if (abortController.signal.aborted) {
                             if (lastResponse) {
                                 lastResponse.stopReason = CompletionStopReason.RequestAborted

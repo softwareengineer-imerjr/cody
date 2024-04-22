@@ -82,7 +82,7 @@ export function getConfiguration(
         checkValidEnumValues(key, value)
     }
 
-    const autocompleteExperimentalGraphContext: 'bfg' | null = getHiddenSetting(
+    const autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
         'autocomplete.experimental.graphContext',
         null
     )
