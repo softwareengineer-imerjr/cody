@@ -1,7 +1,6 @@
 import { OLLAMA_DEFAULT_URL, type OllamaChatParams, type OllamaGenerateResponse } from '.'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
-import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../../sourcegraph-api/completions/types'
 import { getCompletionsModelConfig } from '../utils'
@@ -55,42 +54,41 @@ export async function ollamaChatClient(
         },
         signal,
     })
-        .then(res => res.body?.getReader())
-        .then(async reader => {
-            if (!reader) {
+        .then(async response => {
+            if (!response?.body) {
                 log?.onError('No response body')
                 throw new Error('No response body')
             }
+
+            const streamDecoder = new TextDecoderStream()
+            const reader = response.body.pipeThrough(streamDecoder).getReader()
+
             onAbort(signal, () => reader.cancel())
+
             let responseText = ''
-            // Handles the response stream to accumulate the full completion text.
             while (true) {
-                const { done, value } = await reader.read()
                 try {
+                    const { done, value } = await reader.read()
+                    if (typeof value === 'string') {
+                        const parsedData = JSON.parse(value) as OllamaGenerateResponse
+                        if (parsedData?.message) {
+                            responseText += parsedData.message.content
+                            cb.onChange(responseText)
+                        }
+                        // Log the completion response details on done.
+                        if (parsedData.done) {
+                            console.info('Ollama stream completed:', parsedData)
+                        }
+                    }
+
                     if (done) {
-                        cb.onChange(responseText)
                         cb.onComplete()
                         break
-                    }
-                    const textDecoder = new TextDecoder()
-                    const data = textDecoder.decode(value, { stream: true })
-                    const parsedData = JSON.parse(data) as OllamaGenerateResponse
-                    if (parsedData?.message) {
-                        responseText += parsedData.message.content
-                        cb.onChange(responseText)
-                    }
-                    // Log the completion response details on done.
-                    if (parsedData.done) {
-                        console.info('Ollama stream completed:', parsedData)
                     }
                 } catch (error) {
                     throw new Error(`Error parsing response: ${error}`)
                 }
             }
-            log?.onComplete({
-                completion: responseText,
-                stopReason: CompletionStopReason.RequestFinished,
-            })
         })
         .catch(error => {
             log?.onError(error)
