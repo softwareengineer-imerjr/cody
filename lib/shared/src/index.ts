@@ -1,7 +1,7 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export { type ChatModel, type EditModel, ModelUsage, ModelContextWindow } from './models/types'
+export { type ChatModel, type EditModel, ModelUsage, type ModelContextWindow } from './models/types'
 export { getDotComDefaultModels } from './models/dotcom'
 export {
     getProviderName,
@@ -127,6 +127,7 @@ export {
     CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
 } from './inferenceClient/misc'
 export type {
@@ -193,7 +194,7 @@ export {
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
-    type ContextFiltersResult,
+    type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
 } from './sourcegraph-api/graphql/client'
@@ -250,3 +251,4 @@ export { getCompletionsModelConfig } from './llm-providers/utils'
 export type { SourcegraphNodeCompletionsClient } from './sourcegraph-api/completions/nodeClient'
 export * from './fetch'
 export * from './completions/types'
+export * from './cody-ignore/context-filters-provider'

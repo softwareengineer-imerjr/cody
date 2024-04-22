@@ -1,24 +1,24 @@
 import { OLLAMA_DEFAULT_URL, type OllamaChatParams, type OllamaGenerateResponse } from '.'
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../../sourcegraph-api/completions/types'
 import { getCompletionsModelConfig } from '../utils'
-import { getOllamaChatMessages } from './utils'
 
 /**
  * Calls the Ollama API for chat completions with history.
  *
  * Doc: https://github.com/ollama/ollama/blob/main/docs/api.md#chat-request-with-history
  */
-export function ollamaChatClient(
+export async function ollamaChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
     // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal
-): void {
+): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
         log?.onError('No model or messages')
@@ -30,7 +30,14 @@ export function ollamaChatClient(
     // Construct the Ollama chat parameters from the default completion parameters.
     const ollamaChatParams = {
         model: config?.model || params.model.replace('ollama/', ''),
-        messages: getOllamaChatMessages(params.messages),
+        messages: await Promise.all(
+            params.messages.map(async msg => {
+                return {
+                    role: msg.speaker === 'human' ? 'user' : 'assistant',
+                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                }
+            })
+        ),
         options: {
             temperature: params.temperature,
             top_k: params.topK,
