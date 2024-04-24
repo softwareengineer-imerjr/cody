@@ -1,3 +1,4 @@
+import mermaid from 'mermaid'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 
@@ -230,6 +231,8 @@ class GuardrailsStatusController {
     }
 }
 
+let mermaidInitialized: boolean
+
 /**
  * A component presenting the content of a chat message.
  */
@@ -249,7 +252,22 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             return
         }
 
+        if (!mermaidInitialized) {
+            mermaidInitialized = true
+            const dark = document.body.classList.contains('vscode-dark')
+            // fixme(toolmantim): changing theme seems to do nothing to Mermaid
+            mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default' })
+            // todo(toolmantim): listen to theme changes
+        }
+
         for (const preElement of preElements) {
+            // Render Mermaid charts (<pre><code class="language-mermaid">...</code></pre>)
+            const mermaidElem = preElement.querySelector('code.language-mermaid') as HTMLElement | null
+            if (mermaidElem) {
+                mermaid.run({ nodes: [mermaidElem] })
+                continue
+            }
+
             const preText = preElement.textContent
             if (preText?.trim() && preElement.parentNode) {
                 const buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
