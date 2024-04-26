@@ -818,6 +818,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
+            let summary = '';
             const contextSummary: { [key: string]: number } = {}
             for (const { source } of newContextUsed) {
                 if (!source) {
@@ -829,6 +830,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     contextSummary[source] = 1
                 }
             }
+            for (const source in contextSummary) {
+                summary += `${source}: ${contextSummary[source]} `
+            }
+
+            logDebug('context summary from chat', summary)
 
             // Log the size of all user context items (e.g., @-mentions)
             // Includes the count of files and the size of each file

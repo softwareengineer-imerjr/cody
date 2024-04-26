@@ -21,6 +21,7 @@ export class BfgRetriever implements ContextRetriever {
     private bfgIndexingPromise = Promise.resolve<void>(undefined)
     private awaitIndexing: boolean
     private didFailLoading = false
+    private indexSize: number
     // Keys are repository URIs, values are revisions (commit hashes).
     private indexedRepositoryRevisions = new Map<string, string>()
     constructor(private context: vscode.ExtensionContext) {
@@ -39,6 +40,7 @@ export class BfgRetriever implements ContextRetriever {
         )
 
         this.bfgIndexingPromise = this.indexWorkspace()
+        this.indexSize = 0
     }
 
     private async indexWorkspace(): Promise<void> {
@@ -150,9 +152,11 @@ export class BfgRetriever implements ContextRetriever {
                 await bfg.request('bfg/gitRevision/didChange', {
                     gitDirectoryUri: repository.uri.toString(),
                 })
+                this.indexSize = await bfg.request('bfg/indexSize', {uri: repository.uri.toString()})
             }
             if (workspace) {
                 await bfg.request('bfg/workspace/didChange', { workspaceUri: workspace.toString() })
+                this.indexSize = await bfg.request('bfg/indexSize', {uri: workspace.toString()})
             }
             const elapsed = Date.now() - indexingStartTime
             const label = repository
@@ -299,5 +303,9 @@ export class BfgRetriever implements ContextRetriever {
         const bfg = await spawnBfg(this.context, reject)
         await bfg.request('bfg/initialize', { clientName: 'vscode' })
         return bfg
+    }
+
+    public getIndexSize(): number {
+        return this.indexSize
     }
 }

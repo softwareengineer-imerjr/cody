@@ -24,6 +24,7 @@ import { logDebug } from '../log'
 
 import { getSymfPath } from './download-symf'
 import { symfExpandQuery } from './symfExpandQuery'
+import path from "node:path";
 
 const execFile = promisify(_execFile)
 const oneDayMillis = 1000 * 60 * 60 * 24
@@ -51,6 +52,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     // The root of all symf index directories
     private indexRoot: FileURI
     private indexLocks: Map<string, RWLock> = new Map()
+    private indexRootSize: number
 
     private status: IndexStatus = new IndexStatus()
 
@@ -70,6 +72,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             throw new Error('symf only supports running on the file system')
         }
         this.indexRoot = indexRoot
+        this.indexRootSize = 0
     }
 
     public dispose(): void {
@@ -106,7 +109,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         if (!symfPath) {
             throw new Error('No symf executable')
         }
-        return { accessToken, serverEndpoint, symfPath }
+        return { accessToken, serverEndpoint, symfPath}
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
@@ -222,6 +225,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 'status',
                 scopeDir.fsPath,
             ])
+            this.indexRootSize = await getDirSize(indexDir.path)
             return parseJSONToCorpusDiff(stdout)
         } catch (error) {
             logDebug('SymfRunner', 'symf status error', error)
@@ -462,6 +466,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
     }
 
+    public getIndexSize(): number {
+        return this.indexRootSize
+    }
+
     /**
      * Helpers for tracking index failure
      */
@@ -640,4 +648,22 @@ function toSymfError(error: unknown): Error {
         errorMessage = `symf index creation failed: ${error}`
     }
     return new EvalError(errorMessage)
+}
+
+async function getDirSize(dirPath: string): Promise<number> {
+  const files = await fs.readdir(dirPath);
+  let totalSize = 0;
+
+  for (const file of files) {
+    const filePath = path.join(dirPath, file);
+    const stats = await fs.stat(filePath);
+
+    if (stats.isFile()) {
+      totalSize += stats.size;
+    } else if (stats.isDirectory()) {
+      totalSize += await getDirSize(filePath);
+    }
+  }
+
+  return totalSize;
 }
