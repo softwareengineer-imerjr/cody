@@ -66,31 +66,27 @@ export async function ollamaChatClient(
 
             onAbort(signal, () => reader.cancel())
 
-            // Used to decode the incoming data stream from the response body.
-            const decoder = new TextDecoderStream()
-            // Pipes the response body through the decoder to get a reader for the decoded stream.
-            const reader = response.body.pipeThrough(decoder).getReader()
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
 
             let stopReason = ''
             let completion = ''
 
             while (!stopReason) {
-                // Reads a chunk of the decoded stream.
                 const { done, value } = await reader.read()
 
-                if (value) {
-                    // Splits the decoded chunk by the new lines and filters out empty strings.
-                    for (const chunk of value.split(RESPONSE_SEPARATOR).filter(Boolean)) {
-                        const line = JSON.parse(chunk) as OllamaGenerateResponse
+                // Splits the decoded chunk by the new lines and filters out empty strings.
+                const rawChunks = decoder.decode(value, { stream: true }).split(RESPONSE_SEPARATOR)
+                for (const chunk of rawChunks.filter(Boolean)) {
+                    const line = JSON.parse(chunk) as OllamaGenerateResponse
 
-                        if (line.message) {
-                            completion += line.message.content
-                            cb.onChange(completion)
-                        }
+                    if (line.message) {
+                        completion += line.message.content
+                        cb.onChange(completion)
+                    }
 
-                        if (line.done && line.total_duration) {
-                            logDebug?.('Ollama', 'done streaming', line)
-                        }
+                    if (line.done && line.total_duration) {
+                        logDebug?.('Ollama', 'done streaming', line)
                     }
                 }
 
