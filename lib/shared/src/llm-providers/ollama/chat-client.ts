@@ -1,9 +1,12 @@
 import { OLLAMA_DEFAULT_URL, type OllamaChatParams, type OllamaGenerateResponse } from '.'
+import { CompletionStopReason, logDebug } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../../sourcegraph-api/completions/types'
 import { getCompletionsModelConfig } from '../utils'
+
+const RESPONSE_SEPARATOR = /\r?\n/
 
 /**
  * Calls the Ollama API for chat completions with history.
@@ -31,9 +34,10 @@ export async function ollamaChatClient(
         model: config?.model || params.model.replace('ollama/', ''),
         messages: await Promise.all(
             params.messages.map(async msg => {
+                const { speaker, text } = msg
                 return {
-                    role: msg.speaker === 'human' ? 'user' : 'assistant',
-                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                    role: speaker === 'human' ? 'user' : speaker === 'system' ? 'system' : 'assistant',
+                    content: (await text?.toFilteredString(contextFiltersProvider)) ?? '',
                 }
             })
         ),
@@ -55,40 +59,58 @@ export async function ollamaChatClient(
         signal,
     })
         .then(async response => {
-            if (!response?.body) {
-                log?.onError('No response body')
-                throw new Error('No response body')
+            if (!response.ok || !response?.body) {
+                log?.onError(`HTTP error ${response.status}`)
+                throw new Error(`HTTP error ${response.status}`)
             }
-
-            const streamDecoder = new TextDecoderStream()
-            const reader = response.body.pipeThrough(streamDecoder).getReader()
 
             onAbort(signal, () => reader.cancel())
 
-            let responseText = ''
-            while (true) {
-                try {
-                    const { done, value } = await reader.read()
-                    if (typeof value === 'string') {
-                        const parsedData = JSON.parse(value) as OllamaGenerateResponse
-                        if (parsedData?.message) {
-                            responseText += parsedData.message.content
-                            cb.onChange(responseText)
-                        }
-                        // Log the completion response details on done.
-                        if (parsedData.done) {
-                            console.info('Ollama stream completed:', parsedData)
-                        }
-                    }
+            // Used to decode the incoming data stream from the response body.
+            const decoder = new TextDecoderStream()
+            // Pipes the response body through the decoder to get a reader for the decoded stream.
+            const reader = response.body.pipeThrough(decoder).getReader()
 
-                    if (done) {
-                        cb.onComplete()
-                        break
+            let stopReason = ''
+            let completion = ''
+
+            while (!stopReason) {
+                // Reads a chunk of the decoded stream.
+                const { done, value } = await reader.read()
+
+                if (value) {
+                    // Splits the decoded chunk by the new lines and filters out empty strings.
+                    for (const chunk of value.split(RESPONSE_SEPARATOR).filter(Boolean)) {
+                        const line = JSON.parse(chunk) as OllamaGenerateResponse
+
+                        if (line.message) {
+                            completion += line.message.content
+                            cb.onChange(completion)
+                        }
+
+                        if (line.done && line.total_duration) {
+                            logDebug?.('Ollama', 'done streaming', line)
+                        }
                     }
-                } catch (error) {
-                    throw new Error(`Error parsing response: ${error}`)
+                }
+
+                if (signal?.aborted) {
+                    stopReason = CompletionStopReason.RequestAborted
+                    break
+                }
+
+                if (done) {
+                    stopReason = CompletionStopReason.RequestFinished
+                    break
                 }
             }
+
+            cb.onComplete()
+
+            log?.onComplete({
+                completion,
+                stopReason,
+            })
         })
         .catch(error => {
             log?.onError(error)
