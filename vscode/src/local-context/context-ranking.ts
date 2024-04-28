@@ -9,15 +9,15 @@ import {
     type PromptString,
     isDotCom,
     isFileURI,
-    wrapInActiveSpan,
+    wrapInActiveSpan, telemetryRecorder, truncatePromptString, CHAT_INPUT_TOKEN_BUDGET,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
-import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
-import type { MessageHandler } from '../jsonrpc/jsonrpc'
-import { logDebug } from '../log'
-import { captureException } from '../services/sentry/sentry'
-import { CodyEngineService } from './cody-engine'
+import {URI} from 'vscode-uri'
+import type {RankContextItem, RankerPrediction} from '../jsonrpc/context-ranking-protocol'
+import type {MessageHandler} from '../jsonrpc/jsonrpc'
+import {logDebug} from '../log'
+import {captureException} from '../services/sentry/sentry'
+import {CodyEngineService} from './cody-engine'
 
 interface ContextRanker {
     rankContextItems(query: PromptString, contextItems: ContextItem[]): Promise<ContextItem[]>
@@ -120,7 +120,7 @@ export class ContextRankingController implements ContextRanker {
     }
 
     private async createLogsFile(dirPath: string): Promise<string> {
-        await fspromises.mkdir(dirPath, { recursive: true })
+        await fspromises.mkdir(dirPath, {recursive: true})
         const fileName = 'ranker-payload.jsonl'
         const filePath = path.join(dirPath, fileName)
         if (
@@ -191,6 +191,24 @@ export class ContextRankingController implements ContextRanker {
                 contextItems,
                 rankedItemsOrder.prediction
             )
+
+            const rankerLogData = rankedItemsOrder.prediction.map(function (prediction) {
+                const item = contextItems[prediction.document_id]
+                return {source: item.source, path: item.uri.fsPath, score: prediction.score}
+            })
+
+            telemetryRecorder.recordEvent('cody.context-ranker', 'done', {
+                metadata: {
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+                },
+                privateMetadata: {
+                    rankerData: rankerLogData,
+                    privateContextStats,
+                },
+            })
+
             return reRankedContextItems
         } catch (error) {
             return contextItems
