@@ -30,8 +30,6 @@ export type Requests = {
     // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/shutdown': [null, void]
 
-    'bfg/indexSize': [{uri: string}, number]
-
     'embeddings/hello': [null, string]
 }
 
