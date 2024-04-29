@@ -24,7 +24,7 @@ import { logDebug } from '../log'
 
 import { getSymfPath } from './download-symf'
 import { symfExpandQuery } from './symfExpandQuery'
-import path from "node:path";
+import path from 'node:path'
 
 const execFile = promisify(_execFile)
 const oneDayMillis = 1000 * 60 * 60 * 24
@@ -109,7 +109,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         if (!symfPath) {
             throw new Error('No symf executable')
         }
-        return { accessToken, serverEndpoint, symfPath}
+        return { accessToken, serverEndpoint, symfPath }
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
@@ -651,19 +651,19 @@ function toSymfError(error: unknown): Error {
 }
 
 async function getDirSize(dirPath: string): Promise<number> {
-  const files = await fs.readdir(dirPath);
-  let totalSize = 0;
+    const files = await fs.readdir(dirPath)
+    let totalSize = 0
 
-  for (const file of files) {
-    const filePath = path.join(dirPath, file);
-    const stats = await fs.stat(filePath);
+    for (const file of files) {
+        const filePath = path.join(dirPath, file)
+        const stats = await fs.stat(filePath)
 
-    if (stats.isFile()) {
-      totalSize += stats.size;
-    } else if (stats.isDirectory()) {
-      totalSize += await getDirSize(filePath);
+        if (stats.isFile()) {
+            totalSize += stats.size
+        } else if (stats.isDirectory()) {
+            totalSize += await getDirSize(filePath)
+        }
     }
-  }
 
-  return totalSize;
+    return totalSize
 }
