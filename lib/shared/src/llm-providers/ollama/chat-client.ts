@@ -66,8 +66,10 @@ export async function ollamaChatClient(
 
             onAbort(signal, () => reader.cancel())
 
-            const reader = response.body.getReader()
-            const decoder = new TextDecoder()
+            // Used to decode the incoming data stream from the response body.
+            const decoder = new TextDecoderStream()
+            // Pipes the response body through the decoder to get a reader for the decoded stream.
+            const reader = response.body.pipeThrough(decoder).getReader()
 
             let stopReason = ''
             let completion = ''
@@ -76,17 +78,18 @@ export async function ollamaChatClient(
                 const { done, value } = await reader.read()
 
                 // Splits the decoded chunk by the new lines and filters out empty strings.
-                const rawChunks = decoder.decode(value, { stream: true }).split(RESPONSE_SEPARATOR)
-                for (const chunk of rawChunks.filter(Boolean)) {
-                    const line = JSON.parse(chunk) as OllamaGenerateResponse
+                if (value) {
+                    for (const chunk of value.split(RESPONSE_SEPARATOR).filter(Boolean)) {
+                        const line = JSON.parse(chunk) as OllamaGenerateResponse
 
-                    if (line.message) {
-                        completion += line.message.content
-                        cb.onChange(completion)
-                    }
+                        if (line.message) {
+                            completion += line.message.content
+                            cb.onChange(completion)
+                        }
 
-                    if (line.done && line.total_duration) {
-                        logDebug?.('Ollama', 'done streaming', line)
+                        if (line.done && line.total_duration) {
+                            logDebug?.('Ollama', 'done streaming', line)
+                        }
                     }
                 }
 
