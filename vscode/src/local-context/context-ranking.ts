@@ -11,8 +11,6 @@ import {
     isFileURI,
     wrapInActiveSpan,
     telemetryRecorder,
-    truncatePromptString,
-    CHAT_INPUT_TOKEN_BUDGET,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'

@@ -18,7 +18,7 @@ import {
     isFileURI,
     recordErrorToSpan,
     uriBasename,
-    wrapInActiveSpan,
+    wrapInActiveSpan, isDefined, telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
@@ -419,7 +419,7 @@ export class LocalEmbeddingsController
     //   results.
     private async eagerlyLoad(repoDir: FileURI): Promise<boolean> {
         try {
-            const { repoName } = await (await this.getService()).request(
+            const { repoName, indexSize } = await (await this.getService()).request(
                 'embeddings/load',
                 repoDir.fsPath
             )
@@ -431,6 +431,14 @@ export class LocalEmbeddingsController
             this.lastRepo = {
                 dir: repoDir,
                 repoName,
+            }
+            if (isDefined(indexSize)) {
+                telemetryRecorder.recordEvent('cody.embeddings', 'loaded', {
+                    privateMetadata: {
+                        repoName,
+                        indexSize
+                    }
+                })
             }
             // Start a health check on the index.
             void (async () => {
