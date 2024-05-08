@@ -64,7 +64,7 @@ import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import type { Repo } from '../../context/repo-fetcher'
+import type { RepoWithoutUrl } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
@@ -730,7 +730,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    private async handleChooseRemoteSearchRepo(explicitRepos?: Repo[]): Promise<void> {
+    private async handleChooseRemoteSearchRepo(explicitRepos?: RepoWithoutUrl[]): Promise<void> {
         if (!this.remoteSearch) {
             return
         }

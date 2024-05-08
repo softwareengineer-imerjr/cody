@@ -4,7 +4,10 @@ import * as vscode from 'vscode'
 export interface Repo {
     name: string
     id: string
+    url: string
 }
+
+export interface RepoWithoutUrl extends Omit<Repo, 'url'> {}
 
 export enum RepoFetcherState {
     Paused = 'paused',

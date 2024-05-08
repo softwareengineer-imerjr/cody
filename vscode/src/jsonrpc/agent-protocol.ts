@@ -20,7 +20,7 @@ import type * as vscode from 'vscode'
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
-import type { Repo } from '../context/repo-fetcher'
+import type { RepoWithoutUrl } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/utils'
 
@@ -59,7 +59,7 @@ export type ClientRequests = {
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
     'chat/export': [null, ChatExportResult[]]
-    'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
+    'chat/remoteRepos': [{ id: string }, { remoteRepos?: RepoWithoutUrl[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
     // to submit a chat message. The ID is the return value of chat/id, and the

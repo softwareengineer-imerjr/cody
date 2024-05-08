@@ -95,6 +95,7 @@ test.extend<ExpectedEvents>({
                 {
                     id: 'WOOZL',
                     name: 'repo/foo',
+                    url: 'github.com/repo/bar',
                 },
             ],
             pageInfo: {
@@ -108,6 +109,7 @@ test.extend<ExpectedEvents>({
                 {
                     id: 'WUZLE',
                     name: 'repo/bar',
+                    url: 'github.com/repo/bar',
                 },
             ],
             pageInfo: {

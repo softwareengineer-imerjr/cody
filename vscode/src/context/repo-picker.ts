@@ -3,10 +3,10 @@ import * as vscode from 'vscode'
 import { contextFiltersProvider, pluralize } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
 import { RemoteSearch } from './remote-search'
-import { type Repo, type RepoFetcher, RepoFetcherState } from './repo-fetcher'
+import { type RepoFetcher, RepoFetcherState, type RepoWithoutUrl } from './repo-fetcher'
 import type { WorkspaceRepoMapper } from './workspace-repo-mapper'
 
-interface RepoQuickPickItem extends vscode.QuickPickItem, Repo {
+interface RepoQuickPickItem extends vscode.QuickPickItem, RepoWithoutUrl {
     isIgnored: boolean
 }
 
@@ -15,7 +15,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
     private readonly maxSelectedRepoCount: number = RemoteSearch.MAX_REPO_COUNT - 1
     private disposables: vscode.Disposable[] = []
     private readonly quickpick: vscode.QuickPick<RepoQuickPickItem>
-    private prefetchedRepos: Map<string, Repo> = new Map()
+    private prefetchedRepos: Map<string, RepoWithoutUrl> = new Map()
 
     constructor(
         private readonly fetcher: RepoFetcher,
@@ -76,7 +76,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
     }
 
     // Gets a set of default repositories to search if none were specified.
-    public async getDefaultRepos(): Promise<Repo[]> {
+    public async getDefaultRepos(): Promise<RepoWithoutUrl[]> {
         await this.workspaceRepoMapper.start()
         // Take up to the first N repos from the workspace.
         return this.workspaceRepoMapper.workspaceRepos.slice(0, this.maxSelectedRepoCount)
@@ -84,11 +84,11 @@ export class RemoteRepoPicker implements vscode.Disposable {
 
     // Shows the remote repo picker. Resolves with `undefined` if the user
     // dismissed the dialog with ESC, a click away, etc.
-    public async show(selection: Repo[]): Promise<Repo[] | undefined> {
+    public async show(selection: RepoWithoutUrl[]): Promise<RepoWithoutUrl[] | undefined> {
         logDebug('RepoPicker', 'showing; fetcher state =', this.fetcher.state)
 
-        let onDone = { resolve: (_: Repo[] | undefined) => {}, reject: (error: Error) => {} }
-        const promise = new Promise<Repo[] | undefined>((resolve, reject) => {
+        let onDone = { resolve: (_: RepoWithoutUrl[] | undefined) => {}, reject: (error: Error) => {} }
+        const promise = new Promise<RepoWithoutUrl[] | undefined>((resolve, reject) => {
             onDone = { resolve, reject }
         })
 

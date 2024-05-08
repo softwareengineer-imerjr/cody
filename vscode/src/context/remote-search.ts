@@ -91,7 +91,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     // automatically based on the workspace; these are presented differently
     // and can't be removed by the user. RepoInclusion.Manual is for repositories
     // added manually by the user.
-    public setRepos(repos: repofetcher.Repo[], inclusion: RepoInclusion): void {
+    public setRepos(repos: repofetcher.RepoWithoutUrl[], inclusion: RepoInclusion): void {
         const repoMap: Map<string, DisplayRepo> = new Map(
             repos.map(repo => [repo.id, { displayName: repo.name }])
         )
@@ -108,7 +108,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         this.statusChangedEmitter.fire(this)
     }
 
-    public getRepos(inclusion: RepoInclusion): repofetcher.Repo[] {
+    public getRepos(inclusion: RepoInclusion): repofetcher.RepoWithoutUrl[] {
         return [
             ...(inclusion === RepoInclusion.Automatic ? this.reposAuto : this.reposManual).entries(),
         ].map(([id, repo]) => ({ id, name: repo.displayName }))

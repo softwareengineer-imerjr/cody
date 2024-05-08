@@ -59,7 +59,6 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { enterpriseRepoNameResolver } from './repository/enterprise-repo-name-resolver'
 import { gitAPIinit } from './repository/git-extension-api'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
@@ -215,8 +214,12 @@ const register = async (
     )
     disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
+
     const bindedRepoNamesResolver =
-        enterpriseRepoNameResolver.getRepoNamesFromWorkspaceUri.bind(enterpriseRepoNameResolver)
+        enterpriseContextFactory.repoNameResolver.getRepoNamesFromWorkspaceUri.bind(
+            enterpriseContextFactory.repoNameResolver
+        )
+
     await contextFiltersProvider.init(bindedRepoNamesResolver).then(() => contextProvider.init())
 
     // Shared configuration that is required for chat views to send and receive messages
@@ -350,7 +353,6 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
-    enterpriseRepoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (

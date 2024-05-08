@@ -14,7 +14,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { serializeChatMessage } from '@sourcegraph/cody-shared'
-import type { Repo } from '../../context/repo-fetcher'
+import type { RepoWithoutUrl } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
@@ -24,7 +24,7 @@ export class SimpleChatModel {
         private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private customChatTitle?: string,
-        private selectedRepos?: Repo[]
+        private selectedRepos?: RepoWithoutUrl[]
     ) {
         this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
@@ -142,11 +142,11 @@ export class SimpleChatModel {
         this.customChatTitle = title
     }
 
-    public getSelectedRepos(): Repo[] | undefined {
+    public getSelectedRepos(): RepoWithoutUrl[] | undefined {
         return this.selectedRepos ? this.selectedRepos.map(r => ({ ...r })) : undefined
     }
 
-    public setSelectedRepos(repos: Repo[] | undefined): void {
+    public setSelectedRepos(repos: RepoWithoutUrl[] | undefined): void {
         this.selectedRepos = repos ? repos.map(r => ({ ...r })) : undefined
     }
 

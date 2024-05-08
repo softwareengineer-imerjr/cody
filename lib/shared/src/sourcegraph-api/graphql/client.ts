@@ -142,7 +142,7 @@ export interface PackageListResponse {
 
 export interface RepoListResponse {
     repositories: {
-        nodes: { name: string; id: string }[]
+        nodes: { name: string; id: string; url: string }[]
         pageInfo: {
             endCursor: string | null
         }

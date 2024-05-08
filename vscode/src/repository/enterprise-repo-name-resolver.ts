@@ -6,6 +6,7 @@ import { graphqlClient, isDefined, isFileURI } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
 
 import { LRUCache } from 'lru-cache'
+import { type RepoFetcher, RepoFetcherState } from '../context/repo-fetcher'
 import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
 
 export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string[] | undefined>
@@ -14,16 +15,10 @@ type RemoteUrl = string
 type UriFsPath = string
 
 export class EnterpriseRepoNameResolver {
-    private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
     private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
     private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
 
-    /**
-     * Currently is used to set node specific remote url getters on the extension init.
-     */
-    public init(platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []) {
-        this.platformSpecificGitRemoteGetters = platformSpecificGitRemoteGetters
-    }
+    constructor(private readonly fetcher: RepoFetcher) {}
 
     /**
      * Gets the repo names for a file URI.
@@ -50,16 +45,6 @@ export class EnterpriseRepoNameResolver {
                 remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
             }
 
-            if (remoteUrls === undefined || remoteUrls.length === 0) {
-                for (const getter of this.platformSpecificGitRemoteGetters) {
-                    remoteUrls = await getter(uri)
-
-                    if (remoteUrls?.length !== 0) {
-                        break
-                    }
-                }
-            }
-
             if (remoteUrls) {
                 const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
                 const repoNames = await Promise.all(
@@ -81,6 +66,13 @@ export class EnterpriseRepoNameResolver {
     }
 
     private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
+        // If the repo fetcher got all the repositories available on Sourcegraph instance,
+        // use it to find a matching repo name.
+        if (this.fetcher.state === RepoFetcherState.Complete) {
+            return this.fetcher.repositories.find(repo => repo.url === remoteUrl)?.name || null
+        }
+
+        // Otherwise, query the GraphQL API to resolve the repo name.
         if (this.remoteUrlToRepoNameCache.has(remoteUrl)) {
             return this.remoteUrlToRepoNameCache.get(remoteUrl)!
         }
@@ -182,9 +174,3 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
         throw error
     }
 }
-
-/**
- * A a singleton instance of the `EnterpriseRepoNameResolver` class.
- * `enterpriseRepoNameResolver.init` is called on extension activation to set platform specific remote url getters.
- */
-export const enterpriseRepoNameResolver = new EnterpriseRepoNameResolver()
