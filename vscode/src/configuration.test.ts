@@ -20,8 +20,6 @@ describe('getConfiguration', () => {
                 switch (key) {
                     case 'cody.serverEndpoint':
                         return 'http://example.com'
-                    case 'cody.proxy':
-                        return 'socks5://127.0.0.1:9999'
                     case 'cody.codebase':
                         return 'my/codebase'
                     case 'cody.useContext':
@@ -83,6 +81,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.fireworksOptions':
                         return undefined
+                    case 'cody.autocomplete.experimental.multiModelCompletions':
+                        return undefined
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',
@@ -102,13 +102,15 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
+                    case 'cody.experimental.github.accessToken':
+                        return ''
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
             },
         }
         expect(getConfiguration(config)).toEqual({
-            proxy: 'socks5://127.0.0.1:9999',
+            proxy: undefined,
             codebase: 'my/codebase',
             useContext: 'keyword',
             customHeaders: {
@@ -128,6 +130,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
+            experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,
@@ -141,6 +144,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
+            autocompleteExperimentalFireworksOptions: undefined,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalSmartThrottle: false,

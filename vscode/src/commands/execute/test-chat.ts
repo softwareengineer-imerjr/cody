@@ -3,6 +3,7 @@ import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import type { ChatCommandResult } from '../../main'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCursor } from '../context/selection'
 import { getContextFilesForTestCommand } from '../context/unit-test-chat'
@@ -10,6 +11,7 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 
 /**
  * Generates the prompt and context files with arguments for the '/test' command in Chat.
@@ -61,6 +63,15 @@ export async function executeTestChatCommand(
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.test-chat', async span => {
         span.setAttribute('sampled', true)
+
+        const editor = getEditor()
+        if (
+            editor.active &&
+            (await isUriIgnoredByContextFilterWithNotification(editor.active.document.uri, 'test'))
+        ) {
+            return
+        }
+
         logDebug('executeTestEditCommand', 'executing', { args })
         telemetryService.log('CodyVSCodeExtension:command:test:executed', {
             useCodebaseContex: false,

@@ -8,23 +8,39 @@
     "rules": {
       "recommended": true,
       "nursery": {
-        "useExportType": "error",
-        "useImportType": "error",
-        "useGroupedTypeImport": "error",
-        "noUnusedImports": "error",
-        "noUnusedPrivateClassMembers": "error",
-        "noInvalidUseBeforeDeclaration": "error",
-        "noUselessTernary": "error",
         "noDuplicateJsonKeys": "error",
-        "useNodejsImportProtocol": "error"
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "./telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "../telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "../../services/telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "../../../services/telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "@sourcegraph/cody-shared/src/telemetry": "Telemetry V1 is deprecated - use 'src/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry"
+            }
+          }
+        }
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noRedeclare": "off"
       },
       "style": {
         "noNonNullAssertion": "off",
         "noParameterAssign": "off",
-        "useTemplate": "off"
+        "useTemplate": "off",
+        "useNodejsImportProtocol": "error",
+        "useImportType": "error",
+        "useExportType": "error"
+      },
+      "complexity": {
+        "noUselessTernary": "error"
+      },
+      "correctness": {
+        "noInvalidUseBeforeDeclaration": "error",
+        "noUnusedPrivateClassMembers": "error",
+        "noUnusedImports": "error"
       }
     }
   },
@@ -60,19 +76,14 @@
       "vite.config.ts",
       "__snapshots__/",
       "__mocks__/",
-      ".vscode-test/"
+      ".vscode-test/",
+      "**/.tsconfig.json",
+      "**/tsconfig.json",
+      ".vscode/*.json",
+      "**/fixtures/**"
     ]
   },
   "overrides": [
-    {
-      "include": [".vscode/*.json"],
-      "json": {
-        "parser": {
-          "allowComments": true,
-          "allowTrailingCommas": true
-        }
-      }
-    },
     {
       "include": ["*.json"],
       "json": {

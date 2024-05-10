@@ -6,9 +6,113 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Search: A new `Search Code` command added to the `Commands` sidebar for Cody's Natural Language Search. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
+- Context Menu: Added commands to send file to chat as @-mention from the explorer context menu. [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
+  - `Add File to Chat`: Add file to the current opened chat, or start a new chat if no panel is opened.
+  - `New Chat with File Content`: Opens a new chat with the file content when no existing chat panel is open.
+- Chat: New optimization for prompt quality and token usage, deduplicating context items, and optimizing token allocation. [pull/3929](https://github.com/sourcegraph/cody/pull/3929)
+- Document Code/Generate Tests: User selections are now matched against known symbol ranges, and adjusted in cases where a user selection in a suitable subset of one of these ranges. [pull/4031](https://github.com/sourcegraph/cody/pull/4031)
+- Extension: Added the `vscode.git` extension to the `extensionDependencies` list. [pull/4110](https://github.com/sourcegraph/cody/pull/4110)
+
+### Fixed
+
+- Autocomplete: Handle incomplete Ollama response chunks gracefully. [pull/4066](https://github.com/sourcegraph/cody/pull/4066)
+- Edit: Improved handling of responses that contain HTML entities. [pull/4085](https://github.com/sourcegraph/cody/pull/4085)
+- Chat: Fixed an issue where the chat message editor field was not able to be scrolled with the mouse or trackpad. [pull/4127](https://github.com/sourcegraph/cody/pull/4127)
+
+### Changed
+
+- Extension has been renamed from `Cody AI` to `Cody: AI Coding Assistant with Autocomplete & Chat`. [pull/4079](https://github.com/sourcegraph/cody/pull/4079)
+- Search: Cody's Natural Language Search has been moved to a new quick pick interface, and the search box has been removed from the sidebar. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
+- Editor Context Menu: Updated the existing `Cody Chat: Add context` command to handle selected code from the editor as @-mention . [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
+  - `Add Code to Chat`: Add selected code to the current opened chat, or new chat if no panel is opened.
+  - `New Chat with Code`: Opens a new chat with the selected code when no existing chat panel is open and code is selected in the editor.
+- Fixes an issue where triggering a recipe with no open editor window will cause unexpected behavior. [pull/3911](https://github.com/sourcegraph/cody/pull/3911)
+- Edit: The "Document Code" and "Generate Tests" commands now execute with a single click/action, rather than requiring the user to specify the range first. The range can be modified from the normal Edit input. [pull/4071](https://github.com/sourcegraph/cody/pull/4071)
+- Chat: The model selector now groups chat model choices by characteristics (such as "More Accurate", "Balanced", "Faster", and "Ollama") and indicates the default choice. [pull/4033](https://github.com/sourcegraph/cody/pull/4033)
+
+## [1.16.7]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed a bug where the chat model dropdown would not work on first click. [pull/](https://github.com/sourcegraph/cody/pull/)
+
+### Changed
+
+## [1.16.6]
+
+### Added
+
+- Edit: Added a maximum timeout to the formatting logic, so the Edit does not appear stuck if the users' formatter takes a particularly long amount of time. [pull/4113](https://github.com/sourcegraph/cody/pull/4113)
+
+### Fixed
+
+- Edit: Fixed cases where the formatting of an Edit would not respect the editor tab size with certain formatters. [pull/4111](https://github.com/sourcegraph/cody/pull/4111)
+
+### Changed
+
+## [1.16.5]
+
+### Added
+
+### Fixed
+
+- Tutorial: Fixed a bug where the tutorial would not open on first authentication. [pull/4108](https://github.com/sourcegraph/cody/pull/4108)
+
+### Changed
+
+## [1.16.4]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed a bug where the entire Cody chat view would appear blank when clicking the chat model dropdown. [pull/4098](https://github.com/sourcegraph/cody/pull/4098)
+
+### Changed
+
+## [1.16.3]
+
+### Added
+
+### Fixed
+
+- Tutorial: Fixed telemetry when activating the tutorial on first authentication. [pull/4068](https://github.com/sourcegraph/cody/pull/4068)
+- Tutorial: Improved the reliability and discoverability of the Edit command. [pull/4068](https://github.com/sourcegraph/cody/pull/4068)
+
+### Changed
+
+## [1.16.2]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed a bug where the entire Cody chat view would appear blank. [pull/4062](https://github.com/sourcegraph/cody/pull/4062)
+
+### Changed
+
+## [1.16.1]
+
+### Added
+
+### Fixed
+
+- Fixed a bug where old Sourcegraph instances' error messages caused Cody to ignore all context files. [pull/4024](https://github.com/sourcegraph/cody/pull/4024)
+- Fixed a visually distracting drop shadow on some text labels in the model selection dropdown menu. [pull/4026](https://github.com/sourcegraph/cody/pull/4026)
+
+### Changed
+
+## [1.16.0]
+
+### Added
+
 - Chat: The context window for the `Claude 3 Sonnet` and `Claude 3 Opus` models is now increased by default for all non-Enterprise users, without requiring a feature flag. [pull/3953](https://github.com/sourcegraph/cody/pull/3953)
 - Custom Commands: Added the ability to create new custom Edit commands via the Custom Command Menu. [pull/3862](https://github.com/sourcegraph/cody/pull/3862)
 - Custom Commands: Added 'currentFile' option to include the full file content in the Custom Commands menu. [pull/3960](https://github.com/sourcegraph/cody/pull/3960)
+- Chat: Pressing <kbd>Alt+Enter</kbd> or <kbd>Opt+Enter</kbd> will submit a chat message without enhanced context (only @-mentions). [pull/3996](https://github.com/sourcegraph/cody/pull/3996)
 
 ### Fixed
 
@@ -16,12 +120,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Edit: Fixed an issue where an Edit task would not correctly respin when an irresolvable conflict is encountered. [pull/3872](https://github.com/sourcegraph/cody/pull/3872)
 - Chat: Fixed an issue where older chats were displaying as 'N months ago' instead of the number in the Chat History sidebar. [pull/3864](https://github.com/sourcegraph/cody/pull/3864)
 - Custom Commands: Fixed an issue where the "selection" option was not being toggled correctly based on the user's selection in the Custom Command menu. [pull/3960](https://github.com/sourcegraph/cody/pull/3960)
+- Chat: Fixed an issue where the chat title showed up as "New Chat" when the question started with a new line. [pull/3977](https://github.com/sourcegraph/cody/pull/3977)
 
 ### Changed
 
 - Sidebar (Settings & Support): For Pro & Enterprise, moved 'Account' up to the top. For Pro only, removed 'Usage' as it can be accessed via 'Account' → 'Manage Account'. [pull/3868](https://github.com/sourcegraph/cody/pull/3868)
 - Debug: Removed the `cody.debug.enabled` setting. Baseline debugging is now enabled by default [pull/3873](https://github.com/sourcegraph/cody/pull/3873)
 - Chat: The experimental Ollama Chat feature, which allows using local Ollama models for chat and commands, is now enabled by default. [pull/3914](https://github.com/sourcegraph/cody/pull/3914)
+- Removed Claude 2, Claude 2.1 and Claude Instant from Cody Free and Cody Pro. All users are now upgraded to use Claude 3 by default [pull/3971](https://github.com/sourcegraph/cody/pull/3971)
 
 ## [1.14.0]
 

@@ -1,12 +1,15 @@
+import sharedTestDataset from '@sourcegraph/cody-context-filters-test-dataset/dataset.json'
 import { RE2JS as RE2 } from 're2js'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
+
 import {
     type ContextFilters,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     graphqlClient,
 } from '../sourcegraph-api/graphql/client'
+
 import { ContextFiltersProvider } from './context-filters-provider'
 
 describe('ContextFiltersProvider', () => {
@@ -18,6 +21,7 @@ describe('ContextFiltersProvider', () => {
         provider = new ContextFiltersProvider()
         vi.useFakeTimers()
         getRepoNamesFromWorkspaceUri = vi.fn()
+        vi.spyOn(graphqlClient, 'isCodyEnabled').mockResolvedValue({ enabled: true, version: '6.0.0' })
     })
 
     afterEach(() => {
@@ -25,13 +29,13 @@ describe('ContextFiltersProvider', () => {
         vi.restoreAllMocks()
     })
 
-    function apiResponseForFilters(contextFilters: ContextFilters) {
+    function apiResponseForFilters(contextFilters: ContextFilters | null) {
         return {
             data: { site: { codyContextFilters: { raw: contextFilters } } },
         }
     }
 
-    async function initProviderWithContextFilters(contextFilters: ContextFilters): Promise<void> {
+    async function initProviderWithContextFilters(contextFilters: ContextFilters | null): Promise<void> {
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
             apiResponseForFilters(contextFilters)
         )
@@ -46,6 +50,17 @@ describe('ContextFiltersProvider', () => {
     }
 
     describe('isRepoNameIgnored', () => {
+        it.each(sharedTestDataset.testCases)('$name', async testCase => {
+            const { repos, includedRepos, fileChunks, includedFileChunks } = testCase
+            await initProviderWithContextFilters(testCase['cody.contextFilters'])
+
+            const allowedRepos = repos.filter(r => !provider.isRepoNameIgnored(r.name))
+            expect(allowedRepos).toEqual(includedRepos)
+
+            const allowedFileChunks = fileChunks.filter(fc => !provider.isRepoNameIgnored(fc.repo.name))
+            expect(allowedFileChunks).toEqual(includedFileChunks)
+        })
+
         it.each<AssertFilters>([
             {
                 label: 'allows everything if both include and exclude are empty',
@@ -263,6 +278,20 @@ describe('ContextFiltersProvider', () => {
 
             return URI.file(`/${repoName}/${filePath}`)
         }
+
+        it('should handle the case when version is older than the supported version', async () => {
+            vi.spyOn(graphqlClient, 'isCodyEnabled').mockResolvedValue({
+                enabled: true,
+                version: '5.3.2',
+            })
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
+            })
+
+            const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            expect(await provider.isUriIgnored(includedURI)).toBe(false)
+        })
 
         it('applies context filters correctly', async () => {
             await initProviderWithContextFilters({

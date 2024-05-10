@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net'
 import { expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 import {
+    atMentionMenuHeading,
     createEmptyChatPanel,
     expectContextCellCounts,
     getContextCell,
@@ -30,6 +31,22 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:file:executed',
         'CodyVSCodeExtension:chatResponse:noCode',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.at-mention:executed',
+        'cody.at-mention.file:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
@@ -43,15 +60,13 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await page.keyboard.type('@')
     await expect(
-        chatPanelFrame.getByRole('heading', {
-            name: 'Search for a file to include, or type # for symbols...',
-        })
+        atMentionMenuHeading(chatPanelFrame, 'Search for a file to include, or type # for symbols...')
     ).toBeVisible()
     await page.keyboard.press('Backspace')
 
     // No results
     await chatInput.fill('@definitelydoesntexist')
-    await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Clear the input so the next test doesn't detect the same text already visible from the previous
     // check (otherwise the test can pass even without the filter working).
@@ -63,7 +78,7 @@ test.extend<ExpectedEvents>({
     //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
     //   longer matches.
     await chatInput.fill('@fixtures') // fixture is in the test project folder name, but not in the relative paths.
-    await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
@@ -179,7 +194,7 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).toHaveText('Explain the @Main.java !file')
 
     //  "ArrowLeft" / "ArrowRight" keys alter the query input for @-mentions.
-    const noMatches = chatPanelFrame.getByRole('heading', { name: 'No files found' })
+    const noMatches = atMentionMenuHeading(chatPanelFrame, 'No files found')
     await chatInput.pressSequentially(' @abcdefg')
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
     await noMatches.hover()
@@ -208,7 +223,42 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
 })
 
-test('editing a chat message with @-mention', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        // This is fired on empty @-mention query for open tabs context
+        'CodyVSCodeExtension:at-mention:executed',
+        // Log once on the first character entered for an @-mention query, e.g. "@."
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:abortButton:clicked',
+        'CodyVSCodeExtension:editChatButton:clicked',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:connected',
+        'cody.at-mention:executed',
+        'cody.at-mention.file:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.sidebar.abortButton:clicked',
+        'cody.editChatButton:clicked',
+        'cody.chatResponse:noCode',
+    ],
+})('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
@@ -243,21 +293,46 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await expectContextCellCounts(contextCell, { files: 2 })
 })
 
-test('pressing Enter with @-mention menu open selects item, does not submit message', async ({
-    page,
-    sidebar,
-}) => {
-    await sidebarSignin(page, sidebar)
+test.extend<ExpectedEvents>({
+    expectedEvents: ['CodyVSCodeExtension:at-mention:file:executed'],
+    expectedV2Events: ['cody.at-mention.file:executed'],
+})(
+    'pressing Enter with @-mention menu open selects item, does not submit message',
+    async ({ page, sidebar }) => {
+        await sidebarSignin(page, sidebar)
 
-    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
-    await chatInput.fill('Explain @index.htm')
-    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
-    await chatInput.press('Enter')
-    await expect(chatInput).toHaveText('Explain @index.html')
-    await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
-})
+        const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+        await chatInput.fill('Explain @index.htm')
+        await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
+        await chatInput.press('Enter')
+        await expect(chatInput).toHaveText('Explain @index.html')
+        await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
+    }
+)
 
-test('@-mention links in transcript message', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.at-mention.file:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
+})('@-mention links in transcript message', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
@@ -278,7 +353,31 @@ test('@-mention links in transcript message', async ({ page, sidebar }) => {
     await expect(previewTab).toBeVisible()
 })
 
-test('@-mention file range', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:chat:context:opened',
+        'CodyVSCodeExtension:chat:context:fileLink:clicked',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.at-mention.file:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
+})('@-mention file range', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
@@ -307,7 +406,31 @@ test('@-mention file range', async ({ page, sidebar }) => {
 
 // NOTE: @symbols does not require double tabbing to select an option.
 test.extend<ExpectedEvents>({
-    expectedEvents: ['CodyVSCodeExtension:at-mention:symbol:executed'],
+    expectedEvents: [
+        'CodyVSCodeExtension:at-mention:executed',
+        'CodyVSCodeExtension:at-mention:symbol:executed',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:chat:context:opened',
+        'CodyVSCodeExtension:chat:context:fileLink:clicked',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.at-mention:executed',
+        'cody.at-mention.symbol:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
 })('@-mention symbol in chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
@@ -330,13 +453,11 @@ test.extend<ExpectedEvents>({
 
     // Symbol empty state shows tooltip to search for a symbol
     await chatInput.fill('@#')
-    await expect(
-        chatPanelFrame.getByRole('heading', { name: /^Search for a symbol to include/ })
-    ).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, /^Search for a symbol to include/)).toBeVisible()
 
     // Symbol empty symbol results updates tooltip title to show no symbols found
     await chatInput.fill('@#invalide')
-    await expect(chatPanelFrame.getByRole('heading', { name: /^No symbols found/ })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, /^No symbols found/)).toBeVisible()
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.clear()
@@ -366,10 +487,8 @@ test.extend<ExpectedEvents>({
 })
 
 test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyVSCodeExtension:addChatContext:clicked',
-        'CodyVSCodeExtension:addChatContext:clicked',
-    ],
+    expectedEvents: ['CodyVSCodeExtension:addChatContext:clicked'],
+    expectedV2Events: ['cody.addChatContext:clicked'],
 })('add selected code as @-mention with "Cody Chat: Add context"', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
@@ -387,8 +506,8 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press(`${metaKey}+Shift+P`)
     const commandPaletteInputBox = page.getByPlaceholder('Type the name of a command to run.')
     await expect(commandPaletteInputBox).toBeVisible()
-    await commandPaletteInputBox.fill('>Cody Chat: Add context')
-    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+    await commandPaletteInputBox.fill('>New Chat with Selection')
+    await page.locator('a').filter({ hasText: 'New Chat with Selection' }).click()
 
     // Verify the chat input has the selected code as an @-mention item
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
@@ -403,17 +522,41 @@ test.extend<ExpectedEvents>({
     await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
     await page.keyboard.press(`${metaKey}+Shift+P`)
     await expect(commandPaletteInputBox).toBeVisible()
-    await commandPaletteInputBox.fill('>Cody Chat: Add context')
-    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+    await commandPaletteInputBox.fill('>Add Selection to Cody Chat')
+    await page.locator('a').filter({ hasText: 'Add Selection to Cody Chat' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
 })
 
-test.extend<ExtraWorkspaceSettings>({
-    // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
-    extraWorkspaceSettings: async ({}, use) => {
-        use({ 'cody.experimental.urlContext': true })
-    },
-})('@-mention URL', async ({ page, sidebar }) => {
+test
+    .extend<ExtraWorkspaceSettings>({
+        // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
+        extraWorkspaceSettings: async ({}, use) => {
+            use({ 'cody.experimental.urlContext': true })
+        },
+    })
+    .extend<ExpectedEvents>({
+        expectedEvents: [
+            'CodyVSCodeExtension:at-mention:url:executed',
+            'CodyVSCodeExtension:chat-question:executed',
+            'CodyVSCodeExtension:chatResponse:noCode',
+            'CodyVSCodeExtension:chat:context:opened',
+            'CodyVSCodeExtension:chat:context:fileLink:clicked',
+        ],
+        expectedV2Events: [
+            // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+            'cody.extension:savedLogin',
+            'cody.auth:failed',
+            'cody.auth.login:clicked',
+            'cody.auth.signin.menu:clicked',
+            'cody.auth.login:firstEver',
+            'cody.auth.signin.token:clicked',
+            'cody.auth:connected',
+            'cody.at-mention.url:executed',
+            'cody.chat-question:submitted',
+            'cody.chat-question:executed',
+            'cody.chatResponse:noCode',
+        ],
+    })('@-mention URL', async ({ page, sidebar }) => {
     // Start an HTTP server to serve up the web page that we will @-mention.
     const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html' })

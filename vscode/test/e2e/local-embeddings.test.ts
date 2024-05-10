@@ -28,6 +28,16 @@ const test = helpers.test
             'CodyVSCodeExtension:auth:fromToken',
             'CodyVSCodeExtension:Auth:connected',
         ],
+        expectedV2Events: [
+            // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+            'cody.extension:savedLogin',
+            'cody.auth:failed',
+            'cody.auth.login:clicked',
+            'cody.auth.signin.menu:clicked',
+            'cody.auth.login:firstEver',
+            'cody.auth.signin.token:clicked',
+            'cody.auth:connected',
+        ],
     })
     .extend<helpers.WorkspaceDirectory>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
@@ -104,7 +114,7 @@ test.extend<helpers.WorkspaceDirectory>({
     await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible({
         timeout: 60000,
     })
-    await expect(chatFrame.getByText('Folder is not a Git repository.')).toBeVisible()
+    await expect(chatFrame.getByText('Folder is not a Git repository root.')).toBeVisible()
 })
 
 test('git repositories without a remote should explain the issue', async ({ page, sidebar }) => {
@@ -137,6 +147,21 @@ test
             'CodyVSCodeExtension:Auth:connected',
             'CodyVSCodeExtension:chat-question:submitted',
             'CodyVSCodeExtension:chat-question:executed',
+        ],
+        expectedV2Events: [
+            // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+            'cody.extension:savedLogin',
+            'cody.auth:failed',
+            'cody.auth.login:clicked',
+            'cody.auth.signin.menu:clicked',
+            'cody.auth.login:firstEver',
+            'cody.auth.signin.token:clicked',
+            'cody.auth:connected',
+            'cody.auth:connected',
+            'cody.auth:connected',
+            'cody.chat-question:submitted',
+            'cody.chat-question:executed',
+            'cody.chatResponse:noCode',
         ],
     })('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
     await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()

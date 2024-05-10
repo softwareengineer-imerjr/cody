@@ -117,7 +117,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return Promise.resolve(
             scopeDirs
                 .filter(isFileURI)
-                .map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
+                .map(scopeDir => this.getResultsForScopeDir(userQuery, expandedQuery, scopeDir))
         )
     }
 
@@ -127,6 +127,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
      * operation that is best done concurrently with querying and (re)building the index.
      */
     private async getResultsForScopeDir(
+        userQuery: PromptString,
         keywordQuery: Promise<string>,
         scopeDir: FileURI
     ): Promise<Result[]> {
@@ -148,7 +149,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                     indexNotFound = true
                     return ''
                 }
-                return this.unsafeRunQuery(await keywordQuery, scopeDir)
+                return this.unsafeRunQuery(userQuery, await keywordQuery, scopeDir)
             })
             if (indexNotFound) {
                 continue
@@ -262,7 +263,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return lock
     }
 
-    private async unsafeRunQuery(keywordQuery: string, scopeDir: FileURI): Promise<string> {
+    private async unsafeRunQuery(
+        userQuery: PromptString,
+        keywordQuery: string,
+        scopeDir: FileURI
+    ): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
         const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
         try {
@@ -276,7 +281,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                     scopeDir.fsPath,
                     '--fmt',
                     'json',
-                    keywordQuery,
+                    '--expanded-query',
+                    `"${keywordQuery}"`,
+                    `${userQuery}`,
                 ],
                 {
                     env: {
@@ -459,7 +466,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             throw toSymfError(error)
         } finally {
             if (onExit) {
-                process.removeListener('exit', onExit)
+                process.removeListener('loaded', onExit)
             }
             vscode.Disposable.from(...disposeOnFinish).dispose()
             await rm(tmpIndexDir.fsPath, { recursive: true, force: true })

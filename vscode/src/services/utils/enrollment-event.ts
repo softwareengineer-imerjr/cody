@@ -1,6 +1,7 @@
-import type { FeatureFlag } from '@sourcegraph/cody-shared'
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from '../LocalStorageProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../telemetry'
 
 /**
@@ -15,7 +16,7 @@ import { telemetryService } from '../telemetry'
 export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): boolean {
     // Check if the user is enrolled in the experiment or not
     const isEnrolled = localStorage.getEnrollmentHistory(key)
-    const eventName = getFeatureFlagEventName(key as FeatureFlag)
+    const eventName = getFeatureFlagEventName(key)
 
     // If the user is already enrolled or the event name is not found, return early,
     // as we only want to log the enrollment event once in the user's lifetime.
@@ -40,6 +41,8 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): b
  */
 function getFeatureFlagEventName(key: FeatureFlag): string | undefined {
     switch (key) {
+        case FeatureFlag.CodyInteractiveTutorial:
+            return 'interactiveTutorial'
         default:
             return undefined
     }

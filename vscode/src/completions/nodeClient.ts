@@ -6,12 +6,14 @@
 import http from 'node:http'
 import https from 'node:https'
 
+import { agent } from '@sourcegraph/cody-shared'
 import {
     type CompletionCallbacks,
     type CompletionParameters,
     RateLimitError,
     type SerializedCompletionParameters,
     SourcegraphCompletionsClient,
+    addClientInfoParams,
     contextFiltersProvider,
     customUserAgent,
     getTraceparentHeaders,
@@ -40,6 +42,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
+        addClientInfoParams(url.searchParams)
 
         return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
@@ -120,9 +123,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                         ...this.config.customHeaders,
                         ...getTraceparentHeaders(),
+                        Connection: 'keep-alive',
                     },
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+                    agent: agent.current?.(url),
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers
@@ -158,7 +163,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 'chat messages and commands',
                                 e.message,
                                 upgradeIsAvailable,
-                                limit ? parseInt(limit, 10) : undefined,
+                                limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
                             onErrorOnce(error, res.statusCode)
