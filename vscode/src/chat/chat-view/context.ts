@@ -12,7 +12,7 @@ import {
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
-    wrapInActiveSpan,
+    wrapInActiveSpan, telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import type { RemoteSearch } from '../../context/remote-search'
@@ -240,6 +240,12 @@ async function searchSymf(
                 }
             )
             return (await Promise.all(items)).flat()
+        })
+
+        telemetryRecorder.recordEvent('chat.context.symf', 'complete', {
+            privateMetadata: {
+                indexSize: symf.getIndexSize(),
+            }
         })
 
         return (await Promise.all(r0)).flat()
