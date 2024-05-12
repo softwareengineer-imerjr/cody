@@ -22,10 +22,9 @@ import {
     LARGE_FILE_WARNING_LABEL,
 } from '../../../src/chat/context/constants'
 import { SourcegraphLogo } from '../../icons/SourcegraphLogo'
-import type { MentionTypeaheadOption } from '../../promptEditor/plugins/atMentions/atMentions'
 import styles from './MentionMenuItem.module.css'
 
-function getDescription(item: MentionTypeaheadOption['item'], query: MentionQuery): string {
+function getDescription(item: ContextItem, query: MentionQuery): string {
     const range = query.range ?? item.range
     switch (item.type) {
         case 'github_issue':
@@ -55,7 +54,7 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     let warning: string
     if (isIgnored) {
         warning = IGNORED_FILE_WARNING_LABEL
-    } else if (isLargeFile && !item.range && query.maybeHasRangeSuffix) {
+    } else if (isLargeFile && !item.range && !query.maybeHasRangeSuffix) {
         warning = LARGE_FILE_WARNING_LABEL
     } else {
         warning = ''

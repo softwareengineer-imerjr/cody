@@ -9,12 +9,9 @@ import {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     allMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
-import { useArgs } from '@storybook/preview-api'
 import { VSCodeDecorator } from '../../storybook/VSCodeStoryDecorator'
 import { MentionMenu } from './MentionMenu'
 import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
-
-const DATA_LOADING: MentionMenuData = toData(undefined)
 
 const meta: Meta<typeof MentionMenu> = {
     title: 'cody/MentionMenu',
@@ -22,13 +19,11 @@ const meta: Meta<typeof MentionMenu> = {
 
     args: {
         params: toParams(''),
-        data: toData([]),
         selectOptionAndCleanUp: () => {},
     },
 
     // Render something that looks like the editor to make the storybook look nicer.
     render: args => {
-        const [, updateArgs] = useArgs()
         return (
             <div>
                 <div
@@ -41,19 +36,7 @@ const meta: Meta<typeof MentionMenu> = {
                 >
                     hello @{args.params.query}▎
                 </div>
-                <MentionMenu
-                    {...args}
-                    updateMentionMenuParams={update => {
-                        updateArgs({ params: { ...args.params, ...update } })
-
-                        if (update.parentItem) {
-                            // Simulate loading.
-                            updateArgs({ data: DATA_LOADING })
-                            setTimeout(() => updateArgs({ data: args.data }), 200)
-                        }
-                    }}
-                    __storybook__focus={true}
-                />
+                <MentionMenu {...args} __storybook__focus={true} />
             </div>
         )
     },
@@ -71,9 +54,12 @@ function toParams(query: string, parentItem?: ContextMentionProviderMetadata): M
     return { query, parentItem: parentItem ?? null }
 }
 
-function toData(items: ContextItem[] | undefined, experimentalProviders = false): MentionMenuData {
+function toData(
+    items: ContextItem[] | undefined,
+    providers: ContextMentionProviderMetadata[] = []
+): MentionMenuData {
     return {
-        providers: allMentionProvidersMetadata(experimentalProviders),
+        providers,
         items,
     }
 }
@@ -81,72 +67,75 @@ function toData(items: ContextItem[] | undefined, experimentalProviders = false)
 export const Default: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams(''),
-        data: toData([
-            {
-                uri: URI.file('a/b/x.go'),
-                type: 'file',
-            },
-            {
-                uri: URI.file('a/b/foo.go'),
-                type: 'file',
-                range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
-            },
-            {
-                symbolName: 'LoginDialog',
-                type: 'symbol',
-                kind: 'class',
-                uri: URI.file('/lib/src/LoginDialog.tsx'),
-            },
-            {
-                symbolName: 'login',
-                type: 'symbol',
-                kind: 'function',
-                uri: URI.file('/src/login.go'),
-                range: { start: { line: 42, character: 1 }, end: { line: 44, character: 1 } },
-            },
-            {
-                symbolName: 'handleLogin',
-                type: 'symbol',
-                kind: 'method',
-                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
-            },
-            {
-                type: 'file',
-                uri: URI.parse('https://example.com/foo'),
-                title: 'Foo - Example',
-                provider: 'url',
-            },
-            {
-                type: 'package',
-                ecosystem: 'npm',
-                name: '@lexical/editor',
-                source: ContextItemSource.Package,
-                provider: 'package',
-                uri: URI.parse('https://sourcegraph.com/npm/lexical/editor'),
-                repoID: '1',
-                title: '@lexical/editor',
-            },
-            {
-                type: 'github_issue',
-                source: ContextItemSource.Github,
-                provider: 'github',
-                uri: URI.parse('https://github.com/pacocoursey/cmdk/issues/252'),
-                title: '#252 Selected item does not scroll into view',
-                issueNumber: 252,
-                repoName: 'pacocoursey/cmdk',
-                owner: 'pacocoursey',
-            },
-            {
-                type: 'github_pull_request',
-                source: ContextItemSource.Github,
-                provider: 'github',
-                uri: URI.parse('https://github.com/sourcegraph/cody/pull/4050'),
-                title: '#4050 use clsx instead of classnames',
-                pullNumber: 4050,
-                repoName: 'sourcegraph/cody',
-                owner: 'sourcegraph',
-            },
-        ]),
+        data: toData(
+            [
+                {
+                    uri: URI.file('a/b/x.go'),
+                    type: 'file',
+                },
+                {
+                    uri: URI.file('a/b/foo.go'),
+                    type: 'file',
+                    range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
+                },
+                {
+                    symbolName: 'LoginDialog',
+                    type: 'symbol',
+                    kind: 'class',
+                    uri: URI.file('/lib/src/LoginDialog.tsx'),
+                },
+                {
+                    symbolName: 'login',
+                    type: 'symbol',
+                    kind: 'function',
+                    uri: URI.file('/src/login.go'),
+                    range: { start: { line: 42, character: 1 }, end: { line: 44, character: 1 } },
+                },
+                {
+                    symbolName: 'handleLogin',
+                    type: 'symbol',
+                    kind: 'method',
+                    uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
+                },
+                {
+                    type: 'file',
+                    uri: URI.parse('https://example.com/foo'),
+                    title: 'Foo - Example',
+                    provider: 'url',
+                },
+                {
+                    type: 'package',
+                    ecosystem: 'npm',
+                    name: '@lexical/editor',
+                    source: ContextItemSource.Package,
+                    provider: 'package',
+                    uri: URI.parse('https://sourcegraph.com/npm/lexical/editor'),
+                    repoID: '1',
+                    title: '@lexical/editor',
+                },
+                {
+                    type: 'github_issue',
+                    source: ContextItemSource.Github,
+                    provider: 'github',
+                    uri: URI.parse('https://github.com/pacocoursey/cmdk/issues/252'),
+                    title: '#252 Selected item does not scroll into view',
+                    issueNumber: 252,
+                    repoName: 'pacocoursey/cmdk',
+                    owner: 'pacocoursey',
+                },
+                {
+                    type: 'github_pull_request',
+                    source: ContextItemSource.Github,
+                    provider: 'github',
+                    uri: URI.parse('https://github.com/sourcegraph/cody/pull/4050'),
+                    title: '#4050 use clsx instead of classnames',
+                    pullNumber: 4050,
+                    repoName: 'sourcegraph/cody',
+                    owner: 'sourcegraph',
+                },
+            ],
+            allMentionProvidersMetadata()
+        ),
     },
 }
 
@@ -165,7 +154,7 @@ export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
                     range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
                 },
             ],
-            true
+            allMentionProvidersMetadata(true)
         ),
     },
 }
@@ -174,13 +163,6 @@ export const Loading: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData(undefined),
-    },
-}
-
-export const FileSearchEmpty: StoryObj<typeof MentionMenu> = {
-    args: {
-        params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
-        data: toData([]),
     },
 }
 

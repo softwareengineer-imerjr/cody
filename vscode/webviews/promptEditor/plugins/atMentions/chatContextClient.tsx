@@ -1,10 +1,10 @@
 import {
     type ContextItem,
     type ContextMentionProviderMetadata,
-    allMentionProvidersMetadata,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
+import { useContextProviders } from '../../../mentions/providers'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 
 export interface ChatContextClient {
@@ -65,12 +65,11 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
             return
         }
 
+        const providers = useContextProviders()
+
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
-        const { provider, maybeHasRangeSuffix, range } = parseMentionQuery(
-            query,
-            allMentionProvidersMetadata()
-        )
+        const { provider, maybeHasRangeSuffix, range } = parseMentionQuery(query, providers)
         if (results?.length && maybeHasRangeSuffix && !range) {
             return
         }

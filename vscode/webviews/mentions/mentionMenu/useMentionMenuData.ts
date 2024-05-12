@@ -1,11 +1,8 @@
-import {
-    type ContextItem,
-    type ContextMentionProviderMetadata,
-    allMentionProvidersMetadata,
-} from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
 import { useMemo, useState } from 'react'
 import { useChatContextItems } from '../../promptEditor/plugins/atMentions/chatContextClient'
 import { prepareContextItemForMentionMenu } from '../../promptEditor/plugins/atMentions/util'
+import { useContextProviders } from '../providers'
 
 export interface MentionMenuParams {
     query: string
@@ -19,12 +16,12 @@ export function useMentionMenuParams(): {
 } {
     const [params, setParams] = useState<MentionMenuParams>({ query: '', parentItem: null })
 
+    const providers = useContextProviders()
+
     // Try to infer from query and trigger characters.
     const parentItem =
         params.parentItem ??
-        allMentionProvidersMetadata().find(p =>
-            p.triggerPrefixes.some(prefix => params.query.startsWith(prefix))
-        ) ??
+        providers.find(p => p.triggerPrefixes.some(prefix => params.query.startsWith(prefix))) ??
         null
 
     return useMemo(
@@ -56,11 +53,14 @@ export function useMentionMenuData(
 ): MentionMenuData {
     const results = useChatContextItems(params.query)
     const queryLower = params.query.toLowerCase()
+
+    const providers = useContextProviders()
+
     return useMemo(
         () => ({
             providers: params.parentItem
                 ? []
-                : allMentionProvidersMetadata().filter(
+                : providers.filter(
                       provider =>
                           provider.id.toLowerCase().includes(queryLower) ||
                           provider.title?.toLowerCase().includes(queryLower)
@@ -69,6 +69,6 @@ export function useMentionMenuData(
                 ?.slice(0, limit)
                 .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),
         }),
-        [params.parentItem, queryLower, results, limit, remainingTokenBudget]
+        [params.parentItem, providers, queryLower, results, limit, remainingTokenBudget]
     )
 }
