@@ -165,7 +165,7 @@ describe('MentionMenu', () => {
             }))
     })
 
-    test('arrow keys', () => {
+    test('keyboard navigation', () => {
         const { container } = render(
             <MentionMenu
                 {...PROPS}
@@ -175,6 +175,10 @@ describe('MentionMenu', () => {
         expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
         fireEvent.keyDown(container, { key: 'ArrowDown' })
         expectMenu(container, ['provider p1', '>item file file1.go', 'item file file2.ts'])
+        fireEvent.keyDown(container, { key: 'ArrowDown' })
+        expectMenu(container, ['provider p1', 'item file file1.go', '>item file file2.ts'])
+        fireEvent.keyDown(container, { key: 'ArrowDown' })
+        expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
     })
 })
 
