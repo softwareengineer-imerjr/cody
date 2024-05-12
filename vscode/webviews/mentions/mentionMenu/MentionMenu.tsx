@@ -110,8 +110,13 @@ export const MentionMenu: FunctionComponent<
 
             if (provider.triggerPrefixes.length > 0) {
                 appendToEditorQuery(provider.triggerPrefixes[0])
+                // If we're selecting the provider by using its trigger prefix, don't *also* call
+                // `updateMentionMenuParams({ parentItem: provider })` because then it would remain
+                // as the parentItem even if the user deletes the trigger prefix from the @-mention
+                // query.
+            } else {
+                updateMentionMenuParams({ parentItem: provider })
             }
-            updateMentionMenuParams({ parentItem: provider })
             setValue(null)
         },
         [data.providers, appendToEditorQuery, updateMentionMenuParams]

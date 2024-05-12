@@ -8,7 +8,7 @@ import { useChatContextItems } from '../../promptEditor/plugins/atMentions/chatC
 import { prepareContextItemForMentionMenu } from '../../promptEditor/plugins/atMentions/util'
 
 export interface MentionMenuParams {
-    query: string // TODO!(sqs): is this needed?
+    query: string
     parentItem: ContextMentionProviderMetadata | null
 }
 
