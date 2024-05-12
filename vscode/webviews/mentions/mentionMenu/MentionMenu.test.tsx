@@ -5,9 +5,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { describe, expect, test, vi } from 'vitest'
+import { type Mock, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { MentionMenu } from './MentionMenu'
+import type { MentionMenuData } from './useMentionMenuData'
 
 vi.mock('./MentionMenuItem', () => ({
     MentionMenuContextItemContent: ({ item }: { item: ContextItem }) =>
@@ -53,19 +54,35 @@ describe('MentionMenu', () => {
             expectMenu(container, ['provider p1'])
         })
 
-        test('select provider with no trigger char', () => {
+        function renderWithMocks(data: MentionMenuData): {
+            updateMentionMenuParams: Mock
+            appendToEditorQuery: Mock
+            selectOptionAndCleanUp: Mock
+            container: HTMLElement
+        } {
             const updateMentionMenuParams = vi.fn()
             const appendToEditorQuery = vi.fn()
             const selectOptionAndCleanUp = vi.fn()
             const { container } = render(
                 <MentionMenu
                     {...PROPS}
-                    data={{ items: [], providers: [PROVIDER_P1] }}
+                    data={data}
                     updateMentionMenuParams={updateMentionMenuParams}
                     appendToEditorQuery={appendToEditorQuery}
                     selectOptionAndCleanUp={selectOptionAndCleanUp}
                 />
             )
+            return {
+                updateMentionMenuParams,
+                appendToEditorQuery,
+                selectOptionAndCleanUp,
+                container,
+            }
+        }
+
+        test('select provider with no trigger char', () => {
+            const { updateMentionMenuParams, appendToEditorQuery, selectOptionAndCleanUp, container } =
+                renderWithMocks({ items: [], providers: [PROVIDER_P1] })
             expectMenu(container, ['provider p1'])
             fireEvent.click(screen.getByText('provider p1'))
             expect(updateMentionMenuParams).toBeCalledTimes(1)
@@ -75,18 +92,8 @@ describe('MentionMenu', () => {
         })
 
         test('select provider with trigger prefix', () => {
-            const updateMentionMenuParams = vi.fn()
-            const appendToEditorQuery = vi.fn()
-            const selectOptionAndCleanUp = vi.fn()
-            const { container } = render(
-                <MentionMenu
-                    {...PROPS}
-                    data={{ items: [], providers: [PROVIDER_P2] }}
-                    updateMentionMenuParams={updateMentionMenuParams}
-                    appendToEditorQuery={appendToEditorQuery}
-                    selectOptionAndCleanUp={selectOptionAndCleanUp}
-                />
-            )
+            const { updateMentionMenuParams, appendToEditorQuery, selectOptionAndCleanUp, container } =
+                renderWithMocks({ items: [], providers: [PROVIDER_P2] })
             expectMenu(container, ['provider p2'])
             fireEvent.click(screen.getByText('provider p2'))
             expect(updateMentionMenuParams).toBeCalledTimes(1)
