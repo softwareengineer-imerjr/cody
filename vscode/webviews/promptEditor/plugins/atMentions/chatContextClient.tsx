@@ -1,4 +1,9 @@
-import { type ContextItem, parseMentionQuery } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type ContextMentionProviderMetadata,
+    allMentionProvidersMetadata,
+    parseMentionQuery,
+} from '@sourcegraph/cody-shared'
 import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 
@@ -50,6 +55,7 @@ function useChatContextClient(): ChatContextClient {
 export function useChatContextItems(query: string | null): ContextItem[] | undefined {
     const chatContextClient = useChatContextClient()
     const [results, setResults] = useState<ContextItem[]>()
+    const [lastProvider, setLastProvider] = useState<ContextMentionProviderMetadata['id'] | null>(null)
     // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this when query changes.
     useEffect(() => {
         // An empty query is a valid query that we use to get open tabs context,
@@ -61,10 +67,19 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
 
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
-        const { maybeHasRangeSuffix, range } = parseMentionQuery(query, [])
+        const { provider, maybeHasRangeSuffix, range } = parseMentionQuery(
+            query,
+            allMentionProvidersMetadata()
+        )
         if (results?.length && maybeHasRangeSuffix && !range) {
             return
         }
+
+        // The results are stale if the provider changed, so clear them.
+        if (provider !== lastProvider) {
+            setResults(undefined)
+        }
+        setLastProvider(provider)
 
         // Track if the query changed since this request was sent (which would make our results
         // no longer valid).

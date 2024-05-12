@@ -35,6 +35,12 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
     id: ID
 
     /**
+     * A short, human-readable display title for the provider, such as "Google Docs". If not given,
+     * `id` is used instead.
+     */
+    title?: string
+
+    /**
      * Prefix strings for the user input after the `@` that trigger this provider. For example, a
      * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
      */
@@ -76,4 +82,32 @@ export type ContextItemFromProvider<ID extends ContextMentionProviderID> = Conte
      * The ID of the {@link ContextMentionProvider} that supplied this context item.
      */
     provider: ID
+}
+
+/**
+ * Metadata about a {@link ContextMentionProvider}.
+ */
+export interface ContextMentionProviderMetadata
+    extends Pick<ContextMentionProvider, 'id' | 'title' | 'triggerPrefixes'> {}
+
+export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata = {
+    id: 'files',
+    title: 'Files',
+    triggerPrefixes: [],
+}
+
+export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata = {
+    id: 'symbols',
+    title: 'Symbols',
+    triggerPrefixes: ['#'],
+}
+
+/** Metadata for all registered {@link ContextMentionProvider}s. */
+export function allMentionProvidersMetadata(experimental = false): ContextMentionProviderMetadata[] {
+    return [
+        FILE_CONTEXT_MENTION_PROVIDER,
+        SYMBOL_CONTEXT_MENTION_PROVIDER,
+        // TODO!(sqs): exclude openctx because it is a meta-provider
+        ...(experimental ? CONTEXT_MENTION_PROVIDERS.filter(({ id }) => id !== 'openctx') : []),
+    ]
 }

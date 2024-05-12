@@ -8,6 +8,10 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [react()],
     root: __dirname,
     base: './',
+    server: {
+        strictPort: true,
+        port: 5778,
+    },
     build: {
         emptyOutDir: false,
         outDir: __dirname + '/../dist/webviews',

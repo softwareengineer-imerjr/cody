@@ -73,6 +73,11 @@ const CommandEmpty = React.forwardRef<
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName
 
+const CommandLoading = React.forwardRef<
+    React.ElementRef<typeof CommandPrimitive.Loading>,
+    React.ComponentPropsWithoutRef<typeof CommandPrimitive.Loading>
+>((props, ref) => <CommandPrimitive.Loading ref={ref} className="tw-p-3 tw-text-md" {...props} />)
+
 const CommandGroup = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Group>,
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
@@ -136,6 +141,7 @@ export {
     CommandInput,
     CommandList,
     CommandEmpty,
+    CommandLoading,
     CommandGroup,
     CommandItem,
     CommandShortcut,

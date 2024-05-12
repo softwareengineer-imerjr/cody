@@ -1,8 +1,8 @@
 import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import { $createTextNode, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { $createTextNode, $insertNodes, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
+import { useCallback, useEffect, useState } from 'react'
 import styles from './atMentions.module.css'
 
 import {
@@ -12,15 +12,18 @@ import {
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
+import { MentionMenu } from '../../../mentions/mentionMenu/MentionMenu'
+import {
+    useMentionMenuData,
+    useMentionMenuParams,
+} from '../../../mentions/mentionMenu/useMentionMenuData'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,
     ContextItemMentionNode,
 } from '../../nodes/ContextItemMentionNode'
-import { OptionsList } from './OptionsList'
-import { useChatContextItems } from './chatContextClient'
-import { contextItemID, prepareContextItemForMentionMenu } from './util'
+import { contextItemID } from './util'
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
@@ -42,8 +45,6 @@ export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
-    const [query, setQuery] = useState<string | null>(null)
-
     /**
      * Total sum of tokens represented by all of the @-mentioned items.
      */
@@ -54,28 +55,31 @@ export default function MentionsPlugin(): JSX.Element | null {
         middleware: [offset(6), flip(), shift()],
     })
 
-    const results = useChatContextItems(query)
-
     const model = useCurrentChatModel()
-    const options = useMemo(() => {
-        const limit =
-            model?.contextWindow?.context?.user ||
-            model?.contextWindow?.input ||
-            FAST_CHAT_INPUT_TOKEN_BUDGET
-        const remainingTokenBudget = limit - tokenAdded
-        return (
-            results
-                ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                .map(item =>
-                    createMentionMenuOption(prepareContextItemForMentionMenu(item, remainingTokenBudget))
-                ) ?? []
-        )
-    }, [results, model, tokenAdded])
+    const limit =
+        model?.contextWindow?.context?.user ||
+        model?.contextWindow?.input ||
+        FAST_CHAT_INPUT_TOKEN_BUDGET
+    const remainingTokenBudget = limit - tokenAdded
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
-    useEffect(() => {
-        update()
-    }, [options, update])
+    const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
+
+    const data = useMentionMenuData(params, {
+        remainingTokenBudget,
+        limit: SUGGESTION_LIST_LENGTH_LIMIT,
+    })
+
+    const appendToEditorQuery = useCallback(
+        (suffix: string): void => {
+            if (editor) {
+                editor.update(() => {
+                    $insertNodes([$createTextNode(suffix)])
+                })
+                setTokenAdded(prev => prev + suffix.length)
+            }
+        },
+        [editor]
+    )
 
     useEffect(() => {
         // Listen for changes to ContextItemMentionNode to update the token count.
@@ -124,10 +128,11 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     return (
         <LexicalTypeaheadMenuPlugin<MentionMenuOption>
-            onQueryChange={setQuery}
+            onQueryChange={query => updateQuery(query ?? '')}
             onSelectOption={onSelectOption}
+            onClose={() => updateMentionMenuParams({ parentItem: null })}
             triggerFn={scanForMentionTriggerInUserTextInput}
-            options={options}
+            options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
             commandPriority={
                 COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
@@ -137,10 +142,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                     getBoundingClientRect: menuResolution.getRect,
                 })
             }}
-            menuRenderFn={(
-                anchorElementRef,
-                { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }
-            ) =>
+            menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) =>
                 anchorElementRef.current && (
                     <FloatingPortal root={anchorElementRef.current}>
                         <div
@@ -153,11 +155,11 @@ export default function MentionsPlugin(): JSX.Element | null {
                             }}
                             className={clsx(styles.popover)}
                         >
-                            <OptionsList
-                                query={query ?? ''}
-                                options={options}
-                                selectedIndex={selectedIndex}
-                                setHighlightedIndex={setHighlightedIndex}
+                            <MentionMenu
+                                params={params}
+                                updateMentionMenuParams={updateMentionMenuParams}
+                                appendToEditorQuery={appendToEditorQuery}
+                                data={data}
                                 selectOptionAndCleanUp={selectOptionAndCleanUp}
                             />
                         </div>
@@ -167,3 +169,9 @@ export default function MentionsPlugin(): JSX.Element | null {
         />
     )
 }
+
+/**
+ * Dummy options for LexicalTypeaheadMenuPlugin. See {@link MentionMenu} for an explanation of why
+ * we handle options ourselves.
+ */
+const DUMMY_OPTIONS: MentionMenuOption[] = []
