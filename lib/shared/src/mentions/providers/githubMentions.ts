@@ -104,7 +104,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                     uri: URI.parse(pullRequest.html_url),
                     title: `#${pullRequest.number} ${pullRequest.title}`,
                     source: ContextItemSource.Github,
-                    provider: 'github',
+                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
                 },
             ]
         } catch (error) {
@@ -136,7 +136,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                     uri: URI.parse(issue.html_url),
                     title: `#${issue.number} ${issue.title}`,
                     source: ContextItemSource.Github,
-                    provider: 'github',
+                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
                 },
             ]
         } catch {
@@ -297,7 +297,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                     uri: URI.parse(issue.html_url),
                     title: issue.title,
                     source: ContextItemSource.Github,
-                    provider: 'github',
+                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
                 },
             ]
         } catch {

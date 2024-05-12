@@ -294,6 +294,8 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMentions'
+export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
     setOpenCtxExtensionAPI,

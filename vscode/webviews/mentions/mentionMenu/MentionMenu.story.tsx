@@ -6,7 +6,10 @@ import {
     ContextItemSource,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    GITHUB_CONTEXT_MENTION_PROVIDER,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    URL_CONTEXT_MENTION_PROVIDER,
     allMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 import { VSCodeDecorator } from '../../storybook/VSCodeStoryDecorator'
@@ -101,14 +104,14 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     type: 'file',
                     uri: URI.parse('https://example.com/foo'),
                     title: 'Foo - Example',
-                    provider: 'url',
+                    provider: URL_CONTEXT_MENTION_PROVIDER.id,
                 },
                 {
                     type: 'package',
                     ecosystem: 'npm',
                     name: '@lexical/editor',
                     source: ContextItemSource.Package,
-                    provider: 'package',
+                    provider: PACKAGE_CONTEXT_MENTION_PROVIDER.id,
                     uri: URI.parse('https://sourcegraph.com/npm/lexical/editor'),
                     repoID: '1',
                     title: '@lexical/editor',
@@ -116,7 +119,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
                 {
                     type: 'github_issue',
                     source: ContextItemSource.Github,
-                    provider: 'github',
+                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
                     uri: URI.parse('https://github.com/pacocoursey/cmdk/issues/252'),
                     title: '#252 Selected item does not scroll into view',
                     issueNumber: 252,
@@ -126,7 +129,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
                 {
                     type: 'github_pull_request',
                     source: ContextItemSource.Github,
-                    provider: 'github',
+                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
                     uri: URI.parse('https://github.com/sourcegraph/cody/pull/4050'),
                     title: '#4050 use clsx instead of classnames',
                     pullNumber: 4050,

@@ -41,15 +41,19 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
     title?: string
 
     /**
-     * Prefix strings for the user input after the `@` that trigger this provider. For example, a
-     * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
-     */
-    triggerPrefixes: string[]
-
-    /**
      * Human-readable display string for when the user is querying items from this provider.
      */
     queryLabel?: string
+
+    /**
+     * Prefix strings for the user input after the `@` that trigger this provider. For example, a
+     * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
+     *
+     * TODO(sqs): The MentionMenu appends the first trigger prefix if present, which means that
+     * other trigger prefixes must be entered manually by the user and are not discoverable. We need
+     * to rethink this part of the API and UX.
+     */
+    triggerPrefixes: string[]
 
     /**
      * Get a list of possible context items to show (in a completion menu) when the user triggers
@@ -96,13 +100,13 @@ export interface ContextMentionProviderMetadata
     extends Pick<ContextMentionProvider, 'id' | 'title' | 'queryLabel' | 'triggerPrefixes'> {}
 
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata = {
-    id: 'files',
+    id: 'file',
     title: 'Files',
     triggerPrefixes: [],
 }
 
 export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata = {
-    id: 'symbols',
+    id: 'symbol',
     title: 'Symbols',
     triggerPrefixes: ['#'],
 }
@@ -113,6 +117,8 @@ export function allMentionProvidersMetadata(experimental = false): ContextMentio
         FILE_CONTEXT_MENTION_PROVIDER,
         SYMBOL_CONTEXT_MENTION_PROVIDER,
         // TODO!(sqs): exclude openctx because it is a meta-provider
-        ...(experimental ? CONTEXT_MENTION_PROVIDERS.filter(({ id }) => id !== 'openctx') : []),
+        ...(experimental
+            ? CONTEXT_MENTION_PROVIDERS.filter(({ id }) => id !== OPENCTX_CONTEXT_MENTION_PROVIDER.id)
+            : []),
     ]
 }
