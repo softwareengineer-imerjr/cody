@@ -1,4 +1,13 @@
-import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
+import {
+    FloatingPortal,
+    type UseFloatingOptions,
+    autoUpdate,
+    computePosition,
+    flip,
+    offset,
+    shift,
+    useFloating,
+} from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { $createTextNode, $getSelection, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
@@ -42,6 +51,12 @@ export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
     }
 }
 
+const FLOATING_OPTIONS: UseFloatingOptions = {
+    placement: 'top-start',
+    middleware: [offset(6), flip(), shift()],
+    transform: false,
+}
+
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
@@ -50,11 +65,7 @@ export default function MentionsPlugin(): JSX.Element | null {
      */
     const [tokenAdded, setTokenAdded] = useState<number>(0)
 
-    const { x, y, refs, strategy, update } = useFloating({
-        placement: 'top-start',
-        middleware: [offset(6), flip(), shift()],
-    })
-    console.log({ x, y, refs: refs.reference.current?.getBoundingClientRect() })
+    const { x, y, refs, strategy } = useFloating(FLOATING_OPTIONS)
 
     const model = useCurrentChatModel()
     const limit =
@@ -81,20 +92,6 @@ export default function MentionsPlugin(): JSX.Element | null {
                             const textNode = $createTextNode(`@${query}`)
                             lastNode.replace(textNode)
                             textNode.selectEnd()
-
-                            // const newSelection = $createRangeSelection()
-                            // newSelection.anchor.set(textNode.getKey(), 5, 'text')
-                            // newSelection.focus.set(textNode.getKey(), 5, 'text')
-                            // $setSelection(newSelection)
-                            // textNode.select()
-                            // const xnode = $createTextNode('x')
-                            // textNode.insertAfter(xnode)
-                            // xnode.select()
-                            //
-                            // const sel = $createRangeSelection()
-                            // const offset = textNode.getTextContentSize()
-                            // sel.setTextNodeRange(textNode, offset, textNode, offset)
-                            // $setSelection(sel)
                         }
                     }
                 })
@@ -148,12 +145,26 @@ export default function MentionsPlugin(): JSX.Element | null {
         [editor]
     )
 
+    // Reposition popover when the window, editor, or popover changes size.
+    useEffect(() => {
+        const referenceEl = refs.reference.current
+        const floatingEl = refs.floating.current
+        if (!referenceEl || !floatingEl) {
+            return undefined
+        }
+        const cleanup = autoUpdate(referenceEl, floatingEl, async () => {
+            const { x, y } = await computePosition(referenceEl, floatingEl, FLOATING_OPTIONS)
+            floatingEl.style.left = `${x}px`
+            floatingEl.style.top = `${y}px`
+        })
+        return cleanup
+    }, [refs.reference.current, refs.floating.current])
+
     return (
         <LexicalTypeaheadMenuPlugin<MentionMenuOption>
             onQueryChange={query => updateQuery(query ?? '')}
             onSelectOption={onSelectOption}
             onClose={() => {
-                console.log('ONCLOSE')
                 updateMentionMenuParams({ parentItem: null })
             }}
             triggerFn={scanForMentionTriggerInUserTextInput}
@@ -163,9 +174,17 @@ export default function MentionsPlugin(): JSX.Element | null {
                 COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
             }
             onOpen={menuResolution => {
-                console.log('ONOPEN', menuResolution.getRect())
                 refs.setPositionReference({
-                    getBoundingClientRect: menuResolution.getRect,
+                    getBoundingClientRect: (): DOMRect => {
+                        const range = document.createRange()
+                        const sel = document.getSelection()
+                        if (sel?.anchorNode) {
+                            range.setStart(sel.anchorNode, menuResolution.match?.leadOffset ?? 0)
+                            range.setEnd(sel.anchorNode, sel.anchorOffset)
+                            return range.getBoundingClientRect()
+                        }
+                        throw new Error('no selection anchor')
+                    },
                 })
             }}
             menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) =>
@@ -173,9 +192,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                     <FloatingPortal root={anchorElementRef.current}>
                         <div
                             ref={ref => {
-                                if (ref) {
-                                    refs.setFloating(ref)
-                                }
+                                refs.setFloating(ref)
                             }}
                             style={{
                                 position: strategy,

@@ -79,7 +79,6 @@ if (!(window as any).acquireVsCodeApi) {
 
 export const ContextProvidersDecorator: Decorator = (Story, context) => {
     const experimentalContextProviders = context.globals.experimentalContextProviders
-    console.log('XX', experimentalContextProviders)
     return (
         <WithContextProviders
             value={{ providers: allMentionProvidersMetadata(experimentalContextProviders) }}

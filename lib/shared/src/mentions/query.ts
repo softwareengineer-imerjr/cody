@@ -2,6 +2,7 @@ import type { RangeData } from '../common/range'
 import {
     type ContextMentionProvider,
     type ContextMentionProviderID,
+    type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
 } from './api'
@@ -45,8 +46,13 @@ export interface MentionQuery {
  */
 export function parseMentionQuery(
     query: string,
-    contextMentionProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
+    provider: Pick<ContextMentionProviderMetadata, 'id'> | null,
+    allProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
 ): MentionQuery {
+    if (provider) {
+        return { provider: provider.id, text: query }
+    }
+
     if (query === '') {
         return { provider: null, text: '' }
     }
@@ -55,7 +61,7 @@ export function parseMentionQuery(
         return { provider: SYMBOL_CONTEXT_MENTION_PROVIDER.id, text: query.slice(1) }
     }
 
-    for (const provider of contextMentionProviders) {
+    for (const provider of allProviders) {
         if (provider.triggerPrefixes.some(trigger => query.startsWith(trigger))) {
             return { provider: provider.id, text: query }
         }

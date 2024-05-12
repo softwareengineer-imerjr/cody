@@ -51,7 +51,7 @@ export function useMentionMenuData(
     params: MentionMenuParams,
     { remainingTokenBudget, limit }: { remainingTokenBudget: number; limit: number }
 ): MentionMenuData {
-    const results = useChatContextItems(params.query)
+    const results = useChatContextItems(params.query, params.parentItem)
     const queryLower = params.query.toLowerCase()
 
     const providers = useContextProviders()
