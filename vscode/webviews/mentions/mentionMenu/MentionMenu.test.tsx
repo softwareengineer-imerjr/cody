@@ -180,6 +180,33 @@ describe('MentionMenu', () => {
         fireEvent.keyDown(container, { key: 'ArrowDown' })
         expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
     })
+
+    test('handle selection when data changes', () => {
+        const { container, rerender } = render(
+            <MentionMenu
+                {...PROPS}
+                data={{ items: [ITEM_FILE1, ITEM_FILE2], providers: [PROVIDER_P1, PROVIDER_P2] }}
+            />
+        )
+        fireEvent.keyDown(container, { key: 'ArrowDown' })
+        fireEvent.keyDown(container, { key: 'ArrowDown' })
+        fireEvent.keyDown(container, { key: 'ArrowDown' })
+        expectMenu(container, [
+            'provider p1',
+            'provider p2',
+            'item file file1.go',
+            '>item file file2.ts',
+        ])
+
+        // Data updates and the selected option is still present. It should remain selected.
+        rerender(<MentionMenu {...PROPS} data={{ items: [ITEM_FILE1, ITEM_FILE2], providers: [] }} />)
+        expectMenu(container, ['item file file1.go', '>item file file2.ts'])
+
+        // Data updates and the selected option is no longer present. The first option should be
+        // selected.
+        rerender(<MentionMenu {...PROPS} data={{ items: [ITEM_FILE1], providers: [] }} />)
+        expectMenu(container, ['>item file file1.go'])
+    })
 })
 
 /** A test helper to make it easier to describe an expected {@link MentionMenu}. */
