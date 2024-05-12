@@ -126,6 +126,11 @@ export default function MentionsPlugin(): JSX.Element | null {
         [editor]
     )
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `data` changes to reposition the floating menu.
+    useEffect(() => {
+        update()
+    }, [data, update])
+
     return (
         <LexicalTypeaheadMenuPlugin<MentionMenuOption>
             onQueryChange={query => updateQuery(query ?? '')}

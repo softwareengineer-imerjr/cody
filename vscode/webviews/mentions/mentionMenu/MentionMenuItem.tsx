@@ -83,7 +83,7 @@ export const MentionMenuProviderItemContent: FunctionComponent<{
         <>
             <Icon width={16} height={16} />
             &nbsp;&nbsp;
-            {provider.title}
+            {provider.title ?? provider.id}
             &nbsp;&nbsp;
             <ArrowRightIcon width={16} height={16} style={{ opacity: '0.3' }} />
         </>

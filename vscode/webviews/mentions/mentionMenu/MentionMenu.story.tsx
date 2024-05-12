@@ -170,6 +170,13 @@ export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
     },
 }
 
+export const Loading: StoryObj<typeof MentionMenu> = {
+    args: {
+        params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
+        data: toData(undefined),
+    },
+}
+
 export const FileSearchEmpty: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
