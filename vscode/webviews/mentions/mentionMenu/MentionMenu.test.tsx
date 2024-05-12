@@ -39,11 +39,11 @@ const ITEM_FILE2: ContextItem = {
 
 const PROPS: Pick<
     ComponentProps<typeof MentionMenu>,
-    'params' | 'updateMentionMenuParams' | 'appendToEditorQuery' | 'selectOptionAndCleanUp'
+    'params' | 'updateMentionMenuParams' | 'setEditorQuery' | 'selectOptionAndCleanUp'
 > = {
     params: { query: '', parentItem: null },
     updateMentionMenuParams: () => {},
-    appendToEditorQuery: () => {},
+    setEditorQuery: () => {},
     selectOptionAndCleanUp: () => {},
 }
 
@@ -137,25 +137,25 @@ describe('MentionMenu', () => {
 
     function renderWithMocks(data: MentionMenuData): {
         updateMentionMenuParams: Mock
-        appendToEditorQuery: Mock
+        setEditorQuery: Mock
         selectOptionAndCleanUp: Mock
         container: HTMLElement
     } {
         const updateMentionMenuParams = vi.fn()
-        const appendToEditorQuery = vi.fn()
+        const setEditorQuery = vi.fn()
         const selectOptionAndCleanUp = vi.fn()
         const { container } = render(
             <MentionMenu
                 {...PROPS}
                 data={data}
                 updateMentionMenuParams={updateMentionMenuParams}
-                appendToEditorQuery={appendToEditorQuery}
+                setEditorQuery={setEditorQuery}
                 selectOptionAndCleanUp={selectOptionAndCleanUp}
             />
         )
         return {
             updateMentionMenuParams,
-            appendToEditorQuery,
+            setEditorQuery,
             selectOptionAndCleanUp,
             container,
         }
@@ -163,13 +163,13 @@ describe('MentionMenu', () => {
 
     describe('select provider with no trigger prefix', () => {
         function doTest(action: (container: HTMLElement) => void) {
-            const { updateMentionMenuParams, appendToEditorQuery, selectOptionAndCleanUp, container } =
+            const { updateMentionMenuParams, setEditorQuery, selectOptionAndCleanUp, container } =
                 renderWithMocks({ items: [], providers: [PROVIDER_P1] })
             expectMenu(container, ['>provider p1'])
             action(container)
             expect(updateMentionMenuParams).toBeCalledTimes(1)
             expect(updateMentionMenuParams).toBeCalledWith({ parentItem: PROVIDER_P1 })
-            expect(appendToEditorQuery).toBeCalledTimes(0)
+            expect(setEditorQuery).toBeCalledTimes(0)
             expect(selectOptionAndCleanUp).toBeCalledTimes(0)
         }
         test('click', () => doTest(() => fireEvent.click(screen.getByText('provider p1'))))
@@ -184,13 +184,13 @@ describe('MentionMenu', () => {
 
     describe('select provider with trigger prefix', () => {
         function doTest(action: (container: HTMLElement) => void): void {
-            const { updateMentionMenuParams, appendToEditorQuery, selectOptionAndCleanUp, container } =
+            const { updateMentionMenuParams, setEditorQuery, selectOptionAndCleanUp, container } =
                 renderWithMocks({ items: [], providers: [PROVIDER_P2] })
             expectMenu(container, ['>provider p2'])
             action(container)
             expect(updateMentionMenuParams).toBeCalledTimes(0)
-            expect(appendToEditorQuery).toBeCalledTimes(1)
-            expect(appendToEditorQuery).toBeCalledWith('t2:')
+            expect(setEditorQuery).toBeCalledTimes(1)
+            expect(setEditorQuery).toBeCalledWith('t2:')
             expect(selectOptionAndCleanUp).toBeCalledTimes(0)
         }
         test('click', () => doTest(() => fireEvent.click(screen.getByText('provider p2'))))
@@ -205,12 +205,12 @@ describe('MentionMenu', () => {
 
     describe('select item', () => {
         function doTest(action: (container: HTMLElement) => void): void {
-            const { updateMentionMenuParams, appendToEditorQuery, selectOptionAndCleanUp, container } =
+            const { updateMentionMenuParams, setEditorQuery, selectOptionAndCleanUp, container } =
                 renderWithMocks({ items: [ITEM_FILE1, ITEM_FILE2], providers: [PROVIDER_P1] })
             expectMenu(container, ['provider p1', 'item file file1.go', 'item file file2.ts'])
             action(container)
             expect(updateMentionMenuParams).toBeCalledTimes(0)
-            expect(appendToEditorQuery).toBeCalledTimes(0)
+            expect(setEditorQuery).toBeCalledTimes(0)
             expect(selectOptionAndCleanUp).toBeCalledTimes(1)
             expect(selectOptionAndCleanUp.mock.lastCall[0].item).toEqual(ITEM_FILE1)
         }

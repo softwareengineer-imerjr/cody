@@ -44,7 +44,7 @@ export interface MentionMenuData {
 
 export interface MentionMenuContextValue {
     updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
-    appendToEditorQuery: (suffix: string) => void
+    setEditorQuery: (query: string) => void
 }
 
 export function useMentionMenuData(

@@ -1,7 +1,14 @@
 import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import { $createTextNode, $insertNodes, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
+import {
+    $createRangeSelection,
+    $createTextNode,
+    $getSelection,
+    $setSelection,
+    COMMAND_PRIORITY_NORMAL,
+    type TextNode,
+} from 'lexical'
 import { useCallback, useEffect, useState } from 'react'
 import styles from './atMentions.module.css'
 
@@ -69,13 +76,24 @@ export default function MentionsPlugin(): JSX.Element | null {
         limit: SUGGESTION_LIST_LENGTH_LIMIT,
     })
 
-    const appendToEditorQuery = useCallback(
-        (suffix: string): void => {
+    const setEditorQuery = useCallback(
+        (query: string): void => {
             if (editor) {
                 editor.update(() => {
-                    $insertNodes([$createTextNode(suffix)])
+                    const selection = $getSelection()
+                    if (selection) {
+                        const lastNode = selection.getNodes().at(-1)
+                        if (lastNode) {
+                            const textNode = $createTextNode(`@${query}`)
+                            lastNode.replace(textNode)
+                            textNode.selectEnd()
+                            const sel = $createRangeSelection()
+                            const offset = textNode.getTextContentSize()
+                            sel.setTextNodeRange(textNode, offset, textNode, offset)
+                            $setSelection(sel)
+                        }
+                    }
                 })
-                setTokenAdded(prev => prev + suffix.length)
             }
         },
         [editor]
@@ -163,7 +181,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                             <MentionMenu
                                 params={params}
                                 updateMentionMenuParams={updateMentionMenuParams}
-                                appendToEditorQuery={appendToEditorQuery}
+                                setEditorQuery={setEditorQuery}
                                 data={data}
                                 selectOptionAndCleanUp={selectOptionAndCleanUp}
                             />

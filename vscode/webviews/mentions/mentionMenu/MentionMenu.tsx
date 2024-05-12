@@ -52,7 +52,7 @@ export const MentionMenu: FunctionComponent<
     {
         params: MentionMenuParams
         updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
-        appendToEditorQuery: (suffix: string) => void
+        setEditorQuery: (query: string) => void
         data: MentionMenuData
 
         /** For use in storybooks only. */
@@ -61,7 +61,7 @@ export const MentionMenu: FunctionComponent<
 > = ({
     params,
     updateMentionMenuParams,
-    appendToEditorQuery,
+    setEditorQuery,
     data,
     __storybook__focus,
     selectOptionAndCleanUp,
@@ -110,7 +110,7 @@ export const MentionMenu: FunctionComponent<
             }
 
             if (provider.triggerPrefixes.length > 0) {
-                appendToEditorQuery(provider.triggerPrefixes[0])
+                setEditorQuery(provider.triggerPrefixes[0])
                 // If we're selecting the provider by using its trigger prefix, don't *also* call
                 // `updateMentionMenuParams({ parentItem: provider })` because then it would remain
                 // as the parentItem even if the user deletes the trigger prefix from the @-mention
@@ -120,7 +120,7 @@ export const MentionMenu: FunctionComponent<
             }
             setValue(null)
         },
-        [data.providers, appendToEditorQuery, updateMentionMenuParams]
+        [data.providers, setEditorQuery, updateMentionMenuParams]
     )
 
     const onCommandSelect = useCallback(
