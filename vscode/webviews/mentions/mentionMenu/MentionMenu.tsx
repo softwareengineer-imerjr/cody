@@ -16,7 +16,13 @@ import {
     PACKAGE_HELP_LABEL,
     SYMBOL_HELP_LABEL,
 } from '../../../src/chat/context/constants'
-import { Command, CommandGroup, CommandItem, CommandList } from '../../components/shadcn/ui/command'
+import {
+    Command,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+    CommandLoading,
+} from '../../components/shadcn/ui/command'
 import {
     type MentionMenuOption,
     createMentionMenuOption,
@@ -95,20 +101,6 @@ export const MentionMenu: FunctionComponent<
         return () => window.removeEventListener('keydown', listener, { capture: true })
     }, [])
 
-    // 'Escape' hides the menu. The actual hiding is done by our parent, but reset our state so we
-    // don't revert back to it if shown again.
-    useEffect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                if (params.parentItem) {
-                    updateMentionMenuParams({ parentItem: null })
-                }
-            }
-        }
-        window.addEventListener('keydown', handler, { capture: true })
-        return () => window.removeEventListener('keydown', handler, { capture: true })
-    }, [params.parentItem, updateMentionMenuParams])
-
     const onProviderSelect = useCallback(
         (value: string): void => {
             const provider = data.providers.find(p => commandRowValue(p) === value)
@@ -172,7 +164,7 @@ export const MentionMenu: FunctionComponent<
                         ))}
                     </CommandGroup>
                 )}
-                {data.items && (
+                {data.items ? (
                     <CommandGroup
                         heading={getItemsHeading(
                             params.parentItem,
@@ -191,6 +183,8 @@ export const MentionMenu: FunctionComponent<
                             </CommandItem>
                         ))}
                     </CommandGroup>
+                ) : (
+                    <CommandLoading>Loading...</CommandLoading>
                 )}
             </CommandList>
         </Command>

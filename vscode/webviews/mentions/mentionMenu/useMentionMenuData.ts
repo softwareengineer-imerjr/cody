@@ -65,10 +65,9 @@ export function useMentionMenuData(
                           provider.id.toLowerCase().includes(queryLower) ||
                           provider.title?.toLowerCase().includes(queryLower)
                   ),
-            items:
-                results
-                    ?.slice(0, limit)
-                    .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)) ?? [],
+            items: results
+                ?.slice(0, limit)
+                .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),
         }),
         [params.parentItem, queryLower, results, limit, remainingTokenBudget]
     )
