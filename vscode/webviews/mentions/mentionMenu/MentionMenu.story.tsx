@@ -71,9 +71,9 @@ function toParams(query: string, parentItem?: ContextMentionProviderMetadata): M
     return { query, parentItem: parentItem ?? null }
 }
 
-function toData(items: ContextItem[] | undefined): MentionMenuData {
+function toData(items: ContextItem[] | undefined, experimentalProviders = false): MentionMenuData {
     return {
-        providers: allMentionProvidersMetadata(),
+        providers: allMentionProvidersMetadata(experimentalProviders),
         items,
     }
 }
@@ -147,6 +147,26 @@ export const Default: StoryObj<typeof MentionMenu> = {
                 owner: 'sourcegraph',
             },
         ]),
+    },
+}
+
+export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
+    args: {
+        params: toParams(''),
+        data: toData(
+            [
+                {
+                    uri: URI.file('a/b/x.go'),
+                    type: 'file',
+                },
+                {
+                    uri: URI.file('a/b/foo.go'),
+                    type: 'file',
+                    range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
+                },
+            ],
+            true
+        ),
     },
 }
 
