@@ -1,14 +1,7 @@
 import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import {
-    $createRangeSelection,
-    $createTextNode,
-    $getSelection,
-    $setSelection,
-    COMMAND_PRIORITY_NORMAL,
-    type TextNode,
-} from 'lexical'
+import { $createTextNode, $getSelection, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
 import { useCallback, useEffect, useState } from 'react'
 import styles from './atMentions.module.css'
 
@@ -61,6 +54,7 @@ export default function MentionsPlugin(): JSX.Element | null {
         placement: 'top-start',
         middleware: [offset(6), flip(), shift()],
     })
+    console.log({ x, y, refs: refs.reference.current?.getBoundingClientRect() })
 
     const model = useCurrentChatModel()
     const limit =
@@ -87,10 +81,20 @@ export default function MentionsPlugin(): JSX.Element | null {
                             const textNode = $createTextNode(`@${query}`)
                             lastNode.replace(textNode)
                             textNode.selectEnd()
-                            const sel = $createRangeSelection()
-                            const offset = textNode.getTextContentSize()
-                            sel.setTextNodeRange(textNode, offset, textNode, offset)
-                            $setSelection(sel)
+
+                            // const newSelection = $createRangeSelection()
+                            // newSelection.anchor.set(textNode.getKey(), 5, 'text')
+                            // newSelection.focus.set(textNode.getKey(), 5, 'text')
+                            // $setSelection(newSelection)
+                            // textNode.select()
+                            // const xnode = $createTextNode('x')
+                            // textNode.insertAfter(xnode)
+                            // xnode.select()
+                            //
+                            // const sel = $createRangeSelection()
+                            // const offset = textNode.getTextContentSize()
+                            // sel.setTextNodeRange(textNode, offset, textNode, offset)
+                            // $setSelection(sel)
                         }
                     }
                 })
@@ -144,16 +148,14 @@ export default function MentionsPlugin(): JSX.Element | null {
         [editor]
     )
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `data` changes to reposition the floating menu.
-    useEffect(() => {
-        update()
-    }, [data, update])
-
     return (
         <LexicalTypeaheadMenuPlugin<MentionMenuOption>
             onQueryChange={query => updateQuery(query ?? '')}
             onSelectOption={onSelectOption}
-            onClose={() => updateMentionMenuParams({ parentItem: null })}
+            onClose={() => {
+                console.log('ONCLOSE')
+                updateMentionMenuParams({ parentItem: null })
+            }}
             triggerFn={scanForMentionTriggerInUserTextInput}
             options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
@@ -161,6 +163,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                 COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
             }
             onOpen={menuResolution => {
+                console.log('ONOPEN', menuResolution.getRect())
                 refs.setPositionReference({
                     getBoundingClientRect: menuResolution.getRect,
                 })
@@ -169,11 +172,15 @@ export default function MentionsPlugin(): JSX.Element | null {
                 anchorElementRef.current && (
                     <FloatingPortal root={anchorElementRef.current}>
                         <div
-                            ref={refs.setFloating}
+                            ref={ref => {
+                                if (ref) {
+                                    refs.setFloating(ref)
+                                }
+                            }}
                             style={{
                                 position: strategy,
-                                top: y ?? 0,
-                                left: x ?? 0,
+                                top: y,
+                                left: x,
                                 width: 'max-content',
                             }}
                             className={clsx(styles.popover)}
