@@ -47,6 +47,11 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
     triggerPrefixes: string[]
 
     /**
+     * Human-readable display string for when the user is querying items from this provider.
+     */
+    queryLabel?: string
+
+    /**
      * Get a list of possible context items to show (in a completion menu) when the user triggers
      * this provider while typing `@` in a chat message.
      *
@@ -88,7 +93,7 @@ export type ContextItemFromProvider<ID extends ContextMentionProviderID> = Conte
  * Metadata about a {@link ContextMentionProvider}.
  */
 export interface ContextMentionProviderMetadata
-    extends Pick<ContextMentionProvider, 'id' | 'title' | 'triggerPrefixes'> {}
+    extends Pick<ContextMentionProvider, 'id' | 'title' | 'queryLabel' | 'triggerPrefixes'> {}
 
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata = {
     id: 'files',

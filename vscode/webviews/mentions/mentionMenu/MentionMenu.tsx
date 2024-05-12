@@ -18,6 +18,7 @@ import {
 } from '../../../src/chat/context/constants'
 import {
     Command,
+    CommandEmpty,
     CommandGroup,
     CommandItem,
     CommandList,
@@ -170,24 +171,22 @@ export const MentionMenu: FunctionComponent<
                     </CommandGroup>
                 )}
                 {data.items ? (
-                    <CommandGroup
-                        heading={getItemsHeading(
-                            params.parentItem,
-                            mentionQuery,
-                            data.items.length === 0
-                        )}
-                    >
-                        {data.items?.map(item => (
-                            <CommandItem
-                                key={commandRowValue(item)}
-                                value={commandRowValue(item)}
-                                onSelect={onCommandSelect}
-                                className={styles.item}
-                            >
-                                <MentionMenuContextItemContent query={mentionQuery} item={item} />
-                            </CommandItem>
-                        ))}
-                    </CommandGroup>
+                    data.items.length > 0 ? (
+                        <CommandGroup heading={getItemsHeading(params.parentItem, mentionQuery)}>
+                            {data.items.map(item => (
+                                <CommandItem
+                                    key={commandRowValue(item)}
+                                    value={commandRowValue(item)}
+                                    onSelect={onCommandSelect}
+                                    className={styles.item}
+                                >
+                                    <MentionMenuContextItemContent query={mentionQuery} item={item} />
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    ) : (
+                        <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
+                    )
                 ) : (
                     <CommandLoading>Loading...</CommandLoading>
                 )}
@@ -208,31 +207,43 @@ function commandRowValue(
     return contextItemID(row)
 }
 
-function getItemsHeading(
+function getEmptyLabel(
     parentItem: ContextMentionProviderMetadata | null,
-    mentionQuery: MentionQuery,
-    isItemsEmpty: boolean
+    mentionQuery: MentionQuery
 ): string {
     if (!parentItem) {
-        return isItemsEmpty ? NO_FILE_MATCHES_LABEL : ''
+        return NO_FILE_MATCHES_LABEL
     }
     switch (parentItem.id) {
         case 'packages':
-            return !isItemsEmpty || mentionQuery.text.length < 3
-                ? PACKAGE_HELP_LABEL
-                : NO_PACKAGE_MATCHES_LABEL
+            return mentionQuery.text.length < 3 ? PACKAGE_HELP_LABEL : NO_PACKAGE_MATCHES_LABEL
         case 'symbols':
-            return !isItemsEmpty || !mentionQuery.text.length
+            return !mentionQuery.text.length
                 ? SYMBOL_HELP_LABEL
                 : NO_SYMBOL_MATCHES_LABEL +
                       (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
         case 'files':
-            return !isItemsEmpty
-                ? mentionQuery.maybeHasRangeSuffix
-                    ? FILE_RANGE_TOOLTIP_LABEL
-                    : FILE_HELP_LABEL
-                : NO_FILE_MATCHES_LABEL
+            return NO_FILE_MATCHES_LABEL
         default:
-            return parentItem.title ?? parentItem.id
+            return parentItem.queryLabel ?? parentItem.title ?? parentItem.id
+    }
+}
+
+function getItemsHeading(
+    parentItem: ContextMentionProviderMetadata | null,
+    mentionQuery: MentionQuery
+): string {
+    if (!parentItem) {
+        return ''
+    }
+    switch (parentItem.id) {
+        case 'packages':
+            return PACKAGE_HELP_LABEL
+        case 'symbols':
+            return SYMBOL_HELP_LABEL
+        case 'files':
+            return mentionQuery.maybeHasRangeSuffix ? FILE_RANGE_TOOLTIP_LABEL : FILE_HELP_LABEL
+        default:
+            return parentItem.queryLabel ?? parentItem.title ?? parentItem.id
     }
 }

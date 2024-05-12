@@ -56,6 +56,8 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
     const chatContextClient = useChatContextClient()
     const [results, setResults] = useState<ContextItem[]>()
     const [lastProvider, setLastProvider] = useState<ContextMentionProviderMetadata['id'] | null>(null)
+    const providers = useContextProviders()
+
     // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this when query changes.
     useEffect(() => {
         // An empty query is a valid query that we use to get open tabs context,
@@ -64,8 +66,6 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
             setResults(undefined)
             return
         }
-
-        const providers = useContextProviders()
 
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
@@ -102,6 +102,6 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
         return () => {
             invalidated = true
         }
-    }, [query])
+    }, [query, providers])
     return results
 }

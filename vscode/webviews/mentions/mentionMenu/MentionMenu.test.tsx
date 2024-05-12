@@ -49,18 +49,40 @@ const PROPS: Pick<
 
 describe('MentionMenu', () => {
     describe('initial states', () => {
-        test('loading items', () => {
-            const { container } = render(
-                <MentionMenu {...PROPS} data={{ items: undefined, providers: [PROVIDER_P1] }} />
-            )
-            expectMenu(container, ['>provider p1', 'Loading...'])
-        })
+        describe('all providers', () => {
+            test('loading items', () => {
+                const { container } = render(
+                    <MentionMenu {...PROPS} data={{ items: undefined, providers: [PROVIDER_P1] }} />
+                )
+                expectMenu(container, ['>provider p1', '#Loading...'])
+            })
 
-        test('empty items', () => {
-            const { container } = render(
-                <MentionMenu {...PROPS} data={{ items: [], providers: [PROVIDER_P1] }} />
-            )
-            expectMenu(container, ['>provider p1'])
+            test('empty items', () => {
+                const { container } = render(
+                    <MentionMenu {...PROPS} data={{ items: [], providers: [PROVIDER_P1] }} />
+                )
+                expectMenu(container, ['>provider p1'])
+            })
+
+            test('empty providers', () => {
+                const { container } = render(
+                    <MentionMenu {...PROPS} data={{ items: [ITEM_FILE1], providers: [] }} />
+                )
+                expectMenu(container, ['>item file file1.go'])
+            })
+
+            test('empty items and providers', () => {
+                const { container } = render(
+                    <MentionMenu
+                        {...PROPS}
+                        data={{
+                            items: [],
+                            providers: [],
+                        }}
+                    />
+                )
+                expectMenu(container, ['#No files found'])
+            })
         })
 
         test('with items', () => {
@@ -74,6 +96,42 @@ describe('MentionMenu', () => {
                 />
             )
             expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
+        })
+
+        describe('single provider', () => {
+            test('no items', () => {
+                const { container } = render(
+                    <MentionMenu
+                        {...PROPS}
+                        params={{
+                            query: '',
+                            parentItem: { ...PROVIDER_P1, queryLabel: 'p1 queryLabel' },
+                        }}
+                        data={{
+                            items: [],
+                            providers: [],
+                        }}
+                    />
+                )
+                expectMenu(container, ['#p1 queryLabel'])
+            })
+
+            test('with items', () => {
+                const { container } = render(
+                    <MentionMenu
+                        {...PROPS}
+                        params={{
+                            query: '',
+                            parentItem: { ...PROVIDER_P1, queryLabel: 'p1 queryLabel' },
+                        }}
+                        data={{
+                            items: [ITEM_FILE1],
+                            providers: [],
+                        }}
+                    />
+                )
+                expectMenu(container, ['#p1 queryLabel', 'item file file1.go'])
+            })
         })
     })
 
@@ -211,7 +269,9 @@ describe('MentionMenu', () => {
 /** A test helper to make it easier to describe an expected {@link MentionMenu}. */
 function expectMenu(container: HTMLElement, expectedRows: string[]): void {
     const actualRows = Array.from(
-        container.querySelectorAll<HTMLElement>(':is([role=option], [role=progressbar])')
+        container.querySelectorAll<HTMLElement>(
+            ':is([role=option], [role=progressbar], [cmdk-group-heading], [cmdk-empty])'
+        )
     )
     expect.soft(actualRows).toHaveLength(expectedRows.length)
     for (let i = 0; i < Math.max(expectedRows.length, actualRows.length); i++) {
@@ -219,8 +279,9 @@ function expectMenu(container: HTMLElement, expectedRows: string[]): void {
             expectedRows.at(i)
         )
         const actualRow = actualRows.at(i)
+        const actualRowLabelPrefix = actualRow?.getAttribute('role') !== 'option' ? '#' : ''
         if (actualRow && expectedRow) {
-            expect.soft(actualRow).toHaveTextContent(expectedRow)
+            expect.soft(`${actualRowLabelPrefix}${actualRow.textContent ?? ''}`).toBe(expectedRow)
             if (expectedRowIsSelected) {
                 expect.soft(actualRow).toHaveAttribute('aria-selected', 'true')
             }
