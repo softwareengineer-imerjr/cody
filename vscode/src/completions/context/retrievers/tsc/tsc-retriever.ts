@@ -5,7 +5,6 @@ import {
     isFileURI,
     isMacOS,
     isWindows,
-    logDebug,
     logError,
     tracer,
 } from '@sourcegraph/cody-shared'
@@ -132,7 +131,6 @@ export class TscRetriever implements ContextRetriever {
         if (fromCache) {
             return fromCache
         }
-        logDebug('tsc-retriever', `Reading ${fileName}`)
         for (const document of vscode.workspace.textDocuments) {
             if (isFileURI(document.uri) && document.uri.fsPath === fileName) {
                 return { text: document.getText(), version: document.version.toString() }
@@ -263,7 +261,6 @@ export class TscRetriever implements ContextRetriever {
     }
 
     private async doRetrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
-        const start = performance.now()
         const uri = options.document.uri
         if (!isFileURI(uri)) {
             return []
@@ -272,18 +269,18 @@ export class TscRetriever implements ContextRetriever {
         if (!compiler) {
             return []
         }
-        logDebug('tsc-retriever', 'load compiler', performance.now() - start)
+        // logDebug('tsc-retriever', 'load compiler', performance.now() - start)
         return new Promise<AutocompleteContextSnippet[]>(resolve => {
             process.nextTick(() => {
                 try {
-                    const collectStart = performance.now()
+                    // const collectStart = performance.now()
                     const result = new SymbolCollector(
                         compiler,
                         this.options,
                         options,
                         options.position
                     ).relevantSymbols()
-                    logDebug('tsc-retriever', 'collect symbols', performance.now() - collectStart)
+                    // logDebug('tsc-retriever', 'collect symbols', performance.now() - collectStart)
                     resolve(result)
                 } catch (error) {
                     logError('tsc-retriever', 'unexpected error', error)
